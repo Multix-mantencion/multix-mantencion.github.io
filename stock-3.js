@@ -3,14 +3,15 @@ window.MULTIX_BASE.stock.push(...[{"id":"stk-71","material":"VDF BLOWER BACK UP"
 // Carga las mejoras operativas después de que la aplicación base esté lista.
 window.addEventListener('load',()=>{
   const load=(src)=>new Promise((resolve,reject)=>{const s=document.createElement('script');s.src=src;s.async=false;s.onload=resolve;s.onerror=reject;document.body.appendChild(s);});
-  load('overrides-v6.js?v=20')
-    .then(()=>load('active-v9.js?v=20'))
-    .then(()=>load('equipment-v13.js?v=20'))
-    .then(()=>load('ensilage-v14.js?v=20'))
-    .then(()=>load('assign-assets-v15.js?v=20'))
-    .then(()=>load('operations-machinery-v16.js?v=20'))
-    .then(()=>load('request-status-v17.js?v=20'))
-    .then(()=>load('request-cards-v18.js?v=20'))
-    .then(()=>load('pdf-fix-v20.js?v=20'))
+  load('overrides-v6.js?v=21')
+    .then(()=>load('active-v9.js?v=21'))
+    .then(()=>load('equipment-v13.js?v=21'))
+    .then(()=>load('equipment-manager-v21.js?v=21'))
+    .then(()=>load('ensilage-v14.js?v=21'))
+    .then(()=>load('assign-assets-v15.js?v=21'))
+    .then(()=>load('operations-machinery-v16.js?v=21'))
+    .then(()=>load('request-status-v17.js?v=21'))
+    .then(()=>load('request-cards-v18.js?v=21'))
+    .then(()=>load('pdf-fix-v20.js?v=21'))
     .catch(err=>console.error('No se pudieron cargar las mejoras MultiX',err));
 },{once:true});
