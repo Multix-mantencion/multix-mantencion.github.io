@@ -1,5 +1,120 @@
-function buildPrint(){syncMeta();const parts=[];parts.push(`<img class="pr-logo" src="data:image/png;base64,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"><h1 class="pr-title">INFORME TÉCNICO SEMANAL DE MANTENCIÓN</h1><div class="pr-sub">Área Mantención – ${esc(data.meta.zone)}</div><div class="pr-meta"><div><b>FECHA</b>${esc(data.meta.end)}</div><div><b>PERIODO</b>${esc(data.meta.start)} al ${esc(data.meta.end)}</div><div><b>ÁREA</b>${esc(data.meta.area)}</div><div><b>MECÁNICO EN EL ÁREA</b>${esc(data.meta.mechanic)}</div></div>`);
-CENTER_NAMES.forEach((n,idx)=>{const c=data.centers[n];const has=c.novelties||c.works||c.pending||c.companies||c.observations||c.equipment.length||c.photos.length||c.plants.osmosis.status!=='Sin información'||c.plants.treatment.status!=='Sin información'||Object.values(c.feeding).some(v=>v&&v!=='Sin información');if(!has)return;parts.push(`<div class="pr-center ${idx>0?'':''}"><h2>${esc(n.toUpperCase())}</h2>`);if(c.novelties)parts.push(prText('Novedades',c.novelties));if(c.works)parts.push(prText('Trabajos realizados',c.works));if(c.equipment.length){parts.push(`<div class="pr-section"><h3>Equipos</h3><table class="pr-table"><thead><tr><th>Equipo</th><th>Actual</th><th>Últ. mant.</th><th>Próxima</th><th>Estado</th></tr></thead><tbody>${c.equipment.map(e=>`<tr><td>${esc(e.name||e.type)}${e.reg?`<br><small>N° registro: ${esc(e.reg)}</small>`:''}${e.notes?`<br><small>${esc(e.notes)}</small>`:''}</td><td>${esc(e.current)}</td><td>${esc(e.last)}</td><td>${esc(e.next)}</td><td>${esc(e.status)}</td></tr>`).join('')}</tbody></table></div>`)}
-const pp=[];if(c.plants.treatment.status!=='Sin información')pp.push(`<b>Planta de Tratamiento:</b> ${esc(c.plants.treatment.status)}${c.plants.treatment.detail?' — '+esc(c.plants.treatment.detail):''}`);if(c.plants.osmosis.status!=='Sin información')pp.push(`<b>Planta de Ósmosis:</b> ${esc(c.plants.osmosis.status)}${c.plants.osmosis.detail?' — '+esc(c.plants.osmosis.detail):''}`);if(pp.length)parts.push(`<div class="pr-section"><h3>Plantas</h3><p>${pp.join('<br>')}</p></div>`);
-const fv=[['Blower',c.feeding.blower],['Selectoras',c.feeding.selectors],['Doser',c.feeding.dosers],['Tornillo',c.feeding.screw],['Variadores',c.feeding.vfd]].filter(x=>x[1]&&x[1]!=='Sin información');if(fv.length||c.feeding.notes)parts.push(`<div class="pr-section"><h3>Sistema de alimentación</h3><p>${fv.map(x=>`${x[0]}: ${esc(x[1])}`).join(' · ')}${c.feeding.notes?'<br>'+esc(c.feeding.notes):''}</p></div>`);if(c.pending)parts.push(prText('Trabajos pendientes',c.pending));if(c.companies)parts.push(prText('Empresas en terreno',c.companies));if(c.observations)parts.push(prText('Observaciones',c.observations));if(c.photos.length)parts.push(`<div class="pr-section"><h3>Fotografías</h3><div class="pr-photos">${c.photos.map(p=>`<img src="${p.data}">`).join('')}</div></div>`);const req=data.requests.filter(r=>r.center===n);if(req.length)parts.push(`<div class="pr-section"><h3>Solicitudes y requerimientos</h3><table class="pr-table"><thead><tr><th>Equipo</th><th>Material / repuesto</th><th>Solicitado a</th><th>Fecha</th><th>Estado</th></tr></thead><tbody>${req.map(r=>`<tr><td>${esc(r.equipment)}</td><td>${esc(r.material)}</td><td>${esc(r.requestedTo)}</td><td>${esc(r.date)}</td><td>${esc(r.status)}</td></tr>`).join('')}</tbody></table></div>`);parts.push('</div>')});printReport.innerHTML=parts.join('')}
-function prText(h,t){return `<div class="pr-section"><h3>${h}</h3><p>${esc(t).replace(/\n/g,'<br>')}</p></div>`}
+// MultiX: exportación PDF compatible con celular (iPhone/Android) y computador.
+(function(){
+  let pdfLibPromise=null;
+
+  function loadPdfLibrary(){
+    if(window.html2pdf) return Promise.resolve(window.html2pdf);
+    if(pdfLibPromise) return pdfLibPromise;
+    pdfLibPromise=new Promise((resolve,reject)=>{
+      const s=document.createElement('script');
+      s.src='https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+      s.async=true;
+      s.onload=()=>resolve(window.html2pdf);
+      s.onerror=()=>reject(new Error('No se pudo cargar el generador PDF'));
+      document.head.appendChild(s);
+    });
+    return pdfLibPromise;
+  }
+
+  function installPdfStyles(){
+    if(document.getElementById('mxPdfExportStyles')) return;
+    const st=document.createElement('style');
+    st.id='mxPdfExportStyles';
+    st.textContent=`
+      .mx-pdf-export{width:190mm;background:#fff;color:#111;font-family:Arial,sans-serif;padding:8mm;box-sizing:border-box;line-height:1.35}
+      .mx-pdf-export .pr-logo{height:30px;margin-bottom:9px}
+      .mx-pdf-export .pr-title{font-size:19px;font-weight:800;margin:0;color:#101923}
+      .mx-pdf-export .pr-sub{font-size:10px;color:#59636c;margin:3px 0 12px}
+      .mx-pdf-export .pr-meta{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;font-size:9px;border-bottom:2px solid #152333;padding-bottom:9px;margin-bottom:13px}
+      .mx-pdf-export .pr-meta b{display:block;font-size:8px;margin-bottom:3px;color:#4d5963}
+      .mx-pdf-export .pr-center{margin-bottom:15px}
+      .mx-pdf-export .pr-center h2{font-size:15px;margin:0 0 8px;color:#101923}
+      .mx-pdf-export .pr-section{margin:7px 0}
+      .mx-pdf-export .pr-section h3{font-size:9px;color:#0f7e90;margin:0 0 4px;text-transform:uppercase}
+      .mx-pdf-export .pr-section p,.mx-pdf-export .pr-section li{font-size:9px;line-height:1.35;margin:3px 0}
+      .mx-pdf-export .pr-table{width:100%;border-collapse:collapse;table-layout:fixed}
+      .mx-pdf-export .pr-table th,.mx-pdf-export .pr-table td{font-size:8px;padding:5px 4px;border-bottom:1px solid #d7dde1;color:#111;vertical-align:top;word-wrap:break-word}
+      .mx-pdf-export .pr-table th{color:#505961;text-transform:uppercase}
+      .mx-pdf-export .pr-equipment,.mx-pdf-export .pr-photo-section{break-inside:avoid;page-break-inside:avoid;margin-bottom:9px}
+      .mx-pdf-export .pr-photo-section h4{font-size:8px;text-transform:uppercase;margin:4px 0;color:#0f7e90}
+      .mx-pdf-export .pr-photos{display:grid;grid-template-columns:repeat(2,1fr);gap:6px}
+      .mx-pdf-export .pr-photos figure{margin:0}
+      .mx-pdf-export .pr-photos img{width:100%;max-height:160px;object-fit:cover}
+      .mx-pdf-export .pr-photos figcaption{font-size:7px;color:#4f5a63;margin-top:2px}
+      .mx-pdf-export small{font-size:7px}
+    `;
+    document.head.appendChild(st);
+  }
+
+  function fileName(){
+    const end=(window.data?.meta?.end||new Date().toISOString().slice(0,10)).replaceAll('/','-');
+    return `Informe_Mantencion_MultiX_${end}.pdf`;
+  }
+
+  async function createPdf(){
+    const btn=document.getElementById('pdfBtn');
+    const previous=btn?.textContent||'Exportar PDF';
+    try{
+      if(typeof window.mxPersistDraft==='function') window.mxPersistDraft(true);
+      else if(typeof window.save==='function') window.save();
+
+      if(typeof window.buildPrint!=='function') throw new Error('El informe todavía no está listo. Actualiza la página e inténtalo nuevamente.');
+      window.buildPrint();
+      const report=document.getElementById('printReport');
+      if(!report||!report.innerHTML.trim()) throw new Error('No hay contenido para generar el informe.');
+
+      if(btn){btn.disabled=true;btn.textContent='Creando PDF…';}
+      installPdfStyles();
+      const html2pdf=await loadPdfLibrary();
+
+      const exportBox=document.createElement('div');
+      exportBox.className='mx-pdf-export';
+      exportBox.setAttribute('aria-hidden','true');
+      exportBox.innerHTML=report.innerHTML;
+      exportBox.style.position='fixed';
+      exportBox.style.left='-10000px';
+      exportBox.style.top='0';
+      exportBox.style.zIndex='-1';
+      document.body.appendChild(exportBox);
+
+      try{
+        await html2pdf().set({
+          margin:[8,8,8,8],
+          filename:fileName(),
+          image:{type:'jpeg',quality:0.92},
+          html2canvas:{scale:1.45,useCORS:true,logging:false,backgroundColor:'#ffffff'},
+          jsPDF:{unit:'mm',format:'a4',orientation:'portrait'},
+          pagebreak:{mode:['css','legacy'],avoid:['.pr-equipment','.pr-photo-section']}
+        }).from(exportBox).save();
+      } finally {
+        exportBox.remove();
+      }
+
+      if(btn) btn.textContent='PDF creado ✓';
+      setTimeout(()=>{if(btn){btn.disabled=false;btn.textContent=previous;}},1800);
+    }catch(err){
+      console.error('Error creando PDF',err);
+      if(btn){btn.disabled=false;btn.textContent=previous;}
+      // Respaldo especialmente útil en Safari/iPhone: abre el diálogo nativo inmediatamente.
+      try{
+        if(typeof window.buildPrint==='function') window.buildPrint();
+        window.print();
+      }catch(_){
+        alert((err&&err.message)||'No se pudo crear el PDF.');
+      }
+    }
+  }
+
+  // Precarga la librería para que al tocar el botón en el celular responda de inmediato.
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',()=>loadPdfLibrary().catch(()=>{}));
+  else loadPdfLibrary().catch(()=>{});
+
+  // Captura el clic antes que los manejadores antiguos. Así evitamos el setTimeout que Safari móvil puede bloquear.
+  document.addEventListener('click',e=>{
+    const btn=e.target?.closest?.('#pdfBtn');
+    if(!btn) return;
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    createPdf();
+  },true);
+})();
