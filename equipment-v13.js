@@ -1,55 +1,18 @@
-// MultiX v13 — captura de horómetros por equipo y mantención automática
+// MultiX v13.1 — captura de horómetros por equipo y mantención automática
 (function(){
   'use strict';
   const parseHours=v=>{const raw=String(v??'').trim();if(!raw||raw==='-')return null;const n=Number(raw.replace(/\s/g,'').replace(/\./g,'').replace(',','.'));return Number.isFinite(n)?n:null;};
   const fmt=v=>{const n=parseHours(v);return n===null?'Sin dato':new Intl.NumberFormat('es-CL',{maximumFractionDigits:1}).format(n)+' h';};
   const intervalFor=e=>{const t=((e?.type||'')+' '+(e?.name||'')).toLowerCase();if(t.includes('generador'))return 250;if(t.includes('bote fb')||t.includes('motor fuera')||t.includes('fuera borda'))return 300;return null;};
-  function recalc(e){const interval=intervalFor(e),last=parseHours(e.last),cur=parseHours(e.current);if(interval!==null){e.next=last===null?'':String(last+interval);}const next=parseHours(e.next);if(!['Inoperativo','En observación'].includes(e.status)&&cur!==null&&next!==null)e.status=cur>=next?'Vencido':(next-cur<=50?'Próximo':'OK');return interval;}
+  function recalc(e){const interval=intervalFor(e),last=parseHours(e.last),cur=parseHours(e.current);if(interval!==null)e.next=last===null?'':String(last+interval);const next=parseHours(e.next);if(!['Inoperativo','En observación'].includes(e.status)&&cur!==null&&next!==null)e.status=cur>=next?'Vencido':(next-cur<=50?'Próximo':'OK');return interval;}
   window.mxRecalcEquipment=recalc;
-
-  function persist(){try{localStorage.setItem('multixMantencion',JSON.stringify(data));}catch(_){} }
-  function seedGanso(){
-    if(typeof data==='undefined'||!data?.centers?.Ganso)return;
-    const list=data.centers.Ganso.equipment||(data.centers.Ganso.equipment=[]);
-    if(list.some(e=>String(e.type||e.name||'').toLowerCase().includes('generador')))return;
-    list.push(
-      {id:'ganso-salmex20-gen1',name:'Generador 1',type:'Generador',current:'',last:'',next:'',reg:'',status:'OK',notes:'Pontón Salmex 20'},
-      {id:'ganso-salmex20-gen2',name:'Generador 2',type:'Generador',current:'',last:'',next:'',reg:'',status:'OK',notes:'Pontón Salmex 20'}
-    );
-    persist();
-  }
-
-  function installStyles(){
-    if(document.getElementById('mxEqV13Styles'))return;
-    const s=document.createElement('style');s.id='mxEqV13Styles';s.textContent=`
-      .eq-hours-grid{display:grid;grid-template-columns:1.2fr 1.2fr 1fr 1.1fr;gap:10px}
-      .eq-field input{width:100%;background:#0d2230;border:1px solid var(--teal);color:var(--text);padding:12px;border-radius:9px;font-size:17px;font-weight:800;outline:none}
-      .eq-field small{font-size:10px;color:var(--teal)}
-      .eq-auto-note{font-size:10px;color:var(--teal);margin-top:2px}
-      @media(max-width:760px){.eq-hours-grid{grid-template-columns:1fr 1fr}.eq-field{grid-column:1/-1}.eq-info:last-child{grid-column:1/-1}}
-    `;document.head.appendChild(s);
-  }
-
-  window.mxEqInputChanged=function(i,key,value){
-    const e=data?.centers?.[currentCenter]?.equipment?.[i];if(!e)return;e[key]=String(value||'').trim();recalc(e);persist();
-    const nx=document.getElementById('mx-next-'+i),st=document.getElementById('mx-status-'+i);if(nx)nx.textContent=e.next?fmt(e.next):'Ingresa última mantención';if(st){st.textContent=e.status||'OK';st.className='eq-status '+(e.status||'OK');}
-    if(typeof mxScheduleAutosave==='function')mxScheduleAutosave();
-  };
-
-  window.mxAddGenerator=function(){
-    if(!currentCenter||!data?.centers?.[currentCenter])return;const list=data.centers[currentCenter].equipment||(data.centers[currentCenter].equipment=[]);const n=list.filter(e=>String(e.type||e.name||'').toLowerCase().includes('generador')).length+1;list.push({id:'gen-'+currentCenter+'-'+Date.now(),name:'Generador '+n,type:'Generador',current:'',last:'',next:'',reg:'',status:'OK',notes:''});persist();renderEqEditor();
-  };
-
-  function installEditor(){
-    if(typeof data==='undefined'||typeof equipmentEditor==='undefined')return false;
-    window.renderEqEditor=function(){
-      const c=data.centers[currentCenter];if(!c)return;const list=c.equipment||[];
-      equipmentEditor.innerHTML=list.map((e,i)=>{const interval=recalc(e),auto=interval!==null;return `<div class="eq-card"><div class="eq-card-head"><div><div class="eq-name">${esc(e.name||e.type||'Equipo')}</div><div class="eq-type">${esc(e.type||'Equipo')}</div></div><span id="mx-status-${i}" class="eq-status ${esc(e.status||'OK')}">${esc(e.status||'OK')}</span></div><div class="eq-hours-grid"><label class="eq-field"><span>HORÓMETRO ACTUAL</span><input data-i="${i}" data-k="current" inputmode="decimal" value="${attr(e.current||'')}" placeholder="Ej: 13622" oninput="mxEqInputChanged(${i},'current',this.value)"><small>Horas actuales del equipo.</small></label><label class="eq-field"><span>HORÓMETRO ÚLTIMA MANTENCIÓN</span><input data-i="${i}" data-k="last" inputmode="decimal" value="${attr(e.last||'')}" placeholder="Ej: 13200" oninput="mxEqInputChanged(${i},'last',this.value)"><small>Hora en que se realizó la última mantención.</small></label><div class="eq-info"><span>PRÓXIMA MANTENCIÓN</span><strong id="mx-next-${i}">${e.next?esc(fmt(e.next)):'Ingresa última mantención'}</strong><div class="eq-auto-note">${auto?'Automática: cada '+interval+' h':'Sin intervalo automático definido'}</div></div><div class="eq-info"><span>N° SERIE / REGISTRO</span><strong>${esc(e.reg||'Sin dato')}</strong></div></div>${e.notes?`<div class="eq-notes"><span>DETALLE DEL EQUIPO</span>${esc(e.notes)}</div>`:''}</div>`;}).join('')||`<div class="empty">Sin equipos registrados en este centro.<div style="margin-top:12px"><button class="btn small" onclick="mxAddGenerator()">+ Agregar generador</button></div></div>`;
-    };
-    window.collectEq=function(){document.querySelectorAll('#equipmentEditor input[data-i][data-k]').forEach(el=>{const e=data?.centers?.[currentCenter]?.equipment?.[+el.dataset.i];if(e)e[el.dataset.k]=el.value.trim();});(data?.centers?.[currentCenter]?.equipment||[]).forEach(recalc);persist();};
-    return true;
-  }
-
-  function start(){installStyles();seedGanso();let tries=0;const t=setInterval(()=>{tries++;if(installEditor()){clearInterval(t);if(typeof renderAll==='function')renderAll();if(typeof currentCenter!=='undefined'&&currentCenter&&document.getElementById('editor')?.classList.contains('open'))renderEqEditor();}else if(tries>80)clearInterval(t);},100);}
+  const persist=()=>{try{localStorage.setItem('multixMantencion',JSON.stringify(data));}catch(_){} };
+  function cleanProvisionalGanso(){const c=data?.centers?.Ganso;if(!c?.equipment)return;const ids=new Set(['ganso-salmex20-gen1','ganso-salmex20-gen2']);c.equipment=c.equipment.filter(e=>!ids.has(String(e.id||''))||String(e.current||'').trim()||String(e.last||'').trim()||String(e.reg||'').trim());persist();}
+  function installStyles(){if(document.getElementById('mxEqV13Styles'))return;const s=document.createElement('style');s.id='mxEqV13Styles';s.textContent=`.eq-hours-grid{display:grid;grid-template-columns:1.2fr 1.2fr 1fr 1.1fr;gap:10px}.eq-field input{width:100%;background:#0d2230;border:1px solid var(--teal);color:var(--text);padding:12px;border-radius:9px;font-size:17px;font-weight:800;outline:none}.eq-field small{font-size:10px;color:var(--teal)}.eq-auto-note{font-size:10px;color:var(--teal);margin-top:2px}@media(max-width:760px){.eq-hours-grid{grid-template-columns:1fr 1fr}.eq-field{grid-column:1/-1}.eq-info:last-child{grid-column:1/-1}}`;document.head.appendChild(s);}
+  window.mxEqInputChanged=function(i,key,value){const e=data?.centers?.[currentCenter]?.equipment?.[i];if(!e)return;e[key]=String(value||'').trim();recalc(e);persist();const nx=document.getElementById('mx-next-'+i),st=document.getElementById('mx-status-'+i);if(nx)nx.textContent=e.next?fmt(e.next):'Ingresa última mantención';if(st){st.textContent=e.status||'OK';st.className='eq-status '+(e.status||'OK');}if(typeof mxScheduleAutosave==='function')mxScheduleAutosave();};
+  window.mxAddGenerator=function(){if(!currentCenter||!data?.centers?.[currentCenter])return;const list=data.centers[currentCenter].equipment||(data.centers[currentCenter].equipment=[]),n=list.filter(e=>String(e.type||e.name||'').toLowerCase().includes('generador')).length+1;list.push({id:'gen-'+currentCenter+'-'+Date.now(),name:'Generador '+n,type:'Generador',current:'',last:'',next:'',reg:'',status:'OK',notes:''});persist();renderEqEditor();};
+  function installEditor(){if(typeof data==='undefined'||typeof equipmentEditor==='undefined')return false;window.renderEqEditor=function(){const c=data.centers[currentCenter];if(!c)return;const list=c.equipment||[];equipmentEditor.innerHTML=list.map((e,i)=>{const interval=recalc(e),auto=interval!==null;return `<div class="eq-card"><div class="eq-card-head"><div><div class="eq-name">${esc(e.name||e.type||'Equipo')}</div><div class="eq-type">${esc(e.type||'Equipo')}</div></div><span id="mx-status-${i}" class="eq-status ${esc(e.status||'OK')}">${esc(e.status||'OK')}</span></div><div class="eq-hours-grid"><label class="eq-field"><span>HORÓMETRO ACTUAL</span><input data-i="${i}" data-k="current" inputmode="decimal" value="${attr(e.current||'')}" placeholder="Ej: 13622" oninput="mxEqInputChanged(${i},'current',this.value)"><small>Horas actuales del equipo.</small></label><label class="eq-field"><span>HORÓMETRO ÚLTIMA MANTENCIÓN</span><input data-i="${i}" data-k="last" inputmode="decimal" value="${attr(e.last||'')}" placeholder="Ej: 13200" oninput="mxEqInputChanged(${i},'last',this.value)"><small>Hora en que se realizó la última mantención.</small></label><div class="eq-info"><span>PRÓXIMA MANTENCIÓN</span><strong id="mx-next-${i}">${e.next?esc(fmt(e.next)):'Ingresa última mantención'}</strong><div class="eq-auto-note">${auto?'Automática: cada '+interval+' h':'Sin intervalo automático definido'}</div></div><div class="eq-info"><span>N° SERIE / REGISTRO</span><strong>${esc(e.reg||'Sin dato')}</strong></div></div>${e.notes?`<div class="eq-notes"><span>DETALLE DEL EQUIPO</span>${esc(e.notes)}</div>`:''}</div>`;}).join('')||`<div class="empty">Sin equipos registrados en este centro.<div style="margin-top:12px"><button class="btn small" onclick="mxAddGenerator()">+ Agregar generador</button></div></div>`;};window.collectEq=function(){document.querySelectorAll('#equipmentEditor input[data-i][data-k]').forEach(el=>{const e=data?.centers?.[currentCenter]?.equipment?.[+el.dataset.i];if(e)e[el.dataset.k]=el.value.trim();});(data?.centers?.[currentCenter]?.equipment||[]).forEach(recalc);persist();};return true;}
+  function loadEnsilage(){if(document.getElementById('mxEnsilageV14Loader'))return;const s=document.createElement('script');s.id='mxEnsilageV14Loader';s.src='ensilage-v14.js?v=14';s.async=false;s.onerror=()=>console.error('No se pudo cargar el módulo de ensilaje');document.body.appendChild(s);}
+  function start(){installStyles();cleanProvisionalGanso();let tries=0;const t=setInterval(()=>{tries++;if(installEditor()){clearInterval(t);if(typeof renderAll==='function')renderAll();if(typeof currentCenter!=='undefined'&&currentCenter&&document.getElementById('editor')?.classList.contains('open'))renderEqEditor();loadEnsilage();}else if(tries>80)clearInterval(t);},100);}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
