@@ -79,5 +79,5 @@
   }
 
   function wait(){let n=0;const t=setInterval(()=>{n++;if(typeof mxPersistDraft==='function'&&typeof window.mxCreatePdfNative==='function'&&document.getElementById('mxReportTab')){clearInterval(t);installDashboardRules();installReportFilters();}else if(n>80){clearInterval(t);installDashboardRules();installReportFilters();}},100);}
-  window.addEventListener('load',wait);
+  if(document.readyState==='complete')wait();else window.addEventListener('load',wait);
 })();
