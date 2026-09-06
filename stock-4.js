@@ -69,3 +69,12 @@ document.addEventListener('DOMContentLoaded',()=>{
     const statusEl=equipmentEditor.querySelector(`[data-eq-status="${i}"]`);if(statusEl){statusEl.textContent=st;statusEl.className='eq-status '+st;}
   });
 });
+
+// Carga del módulo v6 una vez que la aplicación base ya terminó de cargar.
+window.addEventListener('load',()=>{
+  if(document.querySelector('script[data-mx-v6]')) return;
+  const s=document.createElement('script');
+  s.src='overrides-v6.js?v=6';
+  s.dataset.mxV6='1';
+  document.body.appendChild(s);
+});
