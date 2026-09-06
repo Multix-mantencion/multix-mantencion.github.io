@@ -1,66 +1,36 @@
-// MultiX v9.2 — centros activos configurables y reporte semanal solo con información real
+// MultiX v9.3 — centros activos configurables, activos reales y alertas solo en aplicación
 (function(){
-  'use strict';
-  const DEFAULT_ACTIVE=['Ganso','Puyuhuapi 2','Pearson','Arbolito','Delta'];
-  const has=v=>String(v||'').trim().length>0;
-  const norm=v=>String(v??'').trim();
-  const clone=v=>JSON.parse(JSON.stringify(v));
-  const allNames=()=>typeof CENTER_NAMES!=='undefined'?[...CENTER_NAMES]:Object.keys(data?.centers||{});
-  function active(){
-    data.settings=data.settings||{};
-    if(!Array.isArray(data.settings.activeCenters)||!data.settings.activeCenters.length){data.settings.activeCenters=[...DEFAULT_ACTIVE];}
-    return data.settings.activeCenters.filter(n=>allNames().includes(n));
-  }
-  const names=()=>active().filter(n=>data?.centers?.[n]);
-  const eqKey=e=>String(e?.id||e?.reg||e?.name||'');
-  const eqSnap=list=>(list||[]).map(e=>({key:eqKey(e),current:norm(e.current),last:norm(e.last)}));
-  const reqIds=name=>(data.requests||[]).filter(r=>r.center===name).map(r=>String(r.id||'')).sort();
-  function baseFor(name,c){return{equipment:eqSnap(c?.equipment),plants:clone(c?.plants||{}),feeding:clone(c?.feeding||{}),pending:norm(c?.pending),requestIds:reqIds(name)}}
-  function eqChanged(list,old){const now=eqSnap(list),prev=old||[];if(now.length!==prev.length)return true;return now.some(n=>{const b=prev.find(x=>x.key===n.key);return !b||b.current!==n.current||b.last!==n.last;});}
-  function changedFromFixed(name,c){const b=window.MULTIX_BASE?.equipment?.[name]||[];return eqChanged(c?.equipment,eqSnap(b));}
-  function plantsHaveData(c){const p=c?.plants||{};return ['osmosis','treatment'].some(k=>has(p[k]?.detail)||(p[k]?.status&&p[k].status!=='Sin información'));}
-  function feedingHasData(c){const f=c?.feeding||{};return has(f.notes)||['blower','selectors','dosers','screw','vfd'].some(k=>f[k]&&f[k]!=='Sin información');}
-  function requestsChanged(name,old){const a=reqIds(name),b=(old||[]).slice().sort();return a.length!==b.length||a.some((x,i)=>x!==b[i]);}
-  function meaningful(name,c){
-    if(!active().includes(name)||!c)return false;
-    if(has(c.novelties)||has(c.works)||has(c.companies)||has(c.observations)||(c.photos||[]).length)return true;
-    if(c.weekBaseline){
-      if(norm(c.pending)!==norm(c.weekBaseline.pending))return true;
-      if(eqChanged(c.equipment,c.weekBaseline.equipment))return true;
-      if(JSON.stringify(c.plants||{})!==JSON.stringify(c.weekBaseline.plants||{}))return true;
-      if(JSON.stringify(c.feeding||{})!==JSON.stringify(c.weekBaseline.feeding||{}))return true;
-      if(requestsChanged(name,c.weekBaseline.requestIds))return true;
-      return false;
-    }
-    if(has(c.pending)||changedFromFixed(name,c)||plantsHaveData(c)||feedingHasData(c))return true;
-    return (data.requests||[]).some(r=>r.center===name&&String(r.id||'').startsWith('req-user-'));
-  }
-  function publishActive(){window.MX_ACTIVE_CENTERS=[...active()];}
-  window.mxMeaningfulCenter=meaningful;
-  window.mxGetActiveCenters=()=>[...active()];
-  window.mxSetActiveCenters=list=>{
-    const valid=[...new Set((list||[]).filter(n=>allNames().includes(n)))];
-    data.settings=data.settings||{};data.settings.activeCenters=valid;
-    publishActive();
-    try{localStorage.setItem('multixMantencion',JSON.stringify(data));}catch(_){}
-    if(typeof renderAll==='function')renderAll();
-    return [...valid];
-  };
+'use strict';
+const DEFAULT_ACTIVE=['Ganso','Puyuhuapi 2','Pearson','Arbolito','Delta'];
+const has=v=>String(v||'').trim().length>0, norm=v=>String(v??'').trim(), clone=v=>JSON.parse(JSON.stringify(v));
+const allNames=()=>typeof CENTER_NAMES!=='undefined'?[...CENTER_NAMES]:Object.keys(data?.centers||{});
+function active(){data.settings=data.settings||{};if(!Array.isArray(data.settings.activeCenters)||!data.settings.activeCenters.length)data.settings.activeCenters=[...DEFAULT_ACTIVE];return data.settings.activeCenters.filter(n=>allNames().includes(n));}
+const names=()=>active().filter(n=>data?.centers?.[n]);
+const eqKey=e=>String(e?.id||e?.reg||e?.name||''),eqSnap=list=>(list||[]).map(e=>({key:eqKey(e),current:norm(e.current),last:norm(e.last)}));
+const reqIds=name=>(data.requests||[]).filter(r=>r.center===name).map(r=>String(r.id||'')).sort();
+function baseFor(name,c){return{equipment:eqSnap(c?.equipment),plants:clone(c?.plants||{}),feeding:clone(c?.feeding||{}),pending:norm(c?.pending),requestIds:reqIds(name)}}
+function eqChanged(list,old){const now=eqSnap(list),prev=old||[];if(now.length!==prev.length)return true;return now.some(n=>{const b=prev.find(x=>x.key===n.key);return !b||b.current!==n.current||b.last!==n.last;});}
+function changedFromFixed(name,c){return eqChanged(c?.equipment,eqSnap(window.MULTIX_BASE?.equipment?.[name]||[]));}
+function plantsHaveData(c){const p=c?.plants||{};return ['osmosis','treatment'].some(k=>has(p[k]?.detail)||(p[k]?.status&&p[k].status!=='Sin información'));}
+function feedingHasData(c){const f=c?.feeding||{};return has(f.notes)||['blower','selectors','dosers','screw','vfd'].some(k=>f[k]&&f[k]!=='Sin información');}
+function requestsChanged(name,old){const a=reqIds(name),b=(old||[]).slice().sort();return a.length!==b.length||a.some((x,i)=>x!==b[i]);}
+function meaningful(name,c){if(!active().includes(name)||!c)return false;if(has(c.novelties)||has(c.works)||has(c.companies)||has(c.observations)||(c.photos||[]).length)return true;if(c.weekBaseline){if(norm(c.pending)!==norm(c.weekBaseline.pending)||eqChanged(c.equipment,c.weekBaseline.equipment)||JSON.stringify(c.plants||{})!==JSON.stringify(c.weekBaseline.plants||{})||JSON.stringify(c.feeding||{})!==JSON.stringify(c.weekBaseline.feeding||{})||requestsChanged(name,c.weekBaseline.requestIds))return true;return false;}if(has(c.pending)||changedFromFixed(name,c)||plantsHaveData(c)||feedingHasData(c))return true;return(data.requests||[]).some(r=>r.center===name&&String(r.id||'').startsWith('req-user-'));}
+function publishActive(){window.MX_ACTIVE_CENTERS=[...active()];}
+window.mxMeaningfulCenter=meaningful;window.mxGetActiveCenters=()=>[...active()];
+window.mxSetActiveCenters=list=>{const previous=active(),valid=[...new Set((list||[]).filter(n=>allNames().includes(n)))];data.settings=data.settings||{};data.settings.activeCenters=valid;previous.filter(n=>!valid.includes(n)).forEach(n=>{if(data.centers?.[n]){data.centers[n].equipment=[];data.centers[n].weekBaseline=null;}if(window.MULTIX_BASE?.equipment)window.MULTIX_BASE.equipment[n]=[];});publishActive();try{localStorage.setItem('multixMantencion',JSON.stringify(data));}catch(_){}if(typeof renderAll==='function')renderAll();return[...valid];};
 
-  function installDashboardRules(){
-    if(window.__mxActiveDashInstalled)return;window.__mxActiveDashInstalled=true;
-    publishActive();
-    calcStats=function(){let equipment=0,vencidos=0,generators=0,boats=0,motocomp=0;names().forEach(n=>{const c=data.centers[n];equipment+=(c.equipment||[]).length;(c.equipment||[]).forEach(e=>{if(typeof mxRecalcEquipment==='function')try{mxRecalcEquipment(e)}catch(_){};if(['Vencido','Inoperativo'].includes(e.status))vencidos++;const t=((e.type||'')+' '+(e.name||'')).toLowerCase();if(t.includes('gener'))generators++;if(t.includes('bote'))boats++;if(t.includes('moto'))motocomp++;});});const a=active();const requests=(data.requests||[]).filter(r=>a.includes(r.center)||r.center==='Área / Base Cisnes').length;return{centers:a.length,equipment,vencidos,generators,boats,motocomp,plants:a.length*2,requests};};
-    renderStats=function(){const s=calcStats();stats.innerHTML=[['centros',s.centers],['equipos',s.equipment],['vencidos',s.vencidos,'warn'],['generadores',s.generators],['plantas',s.plants],['solicitudes',s.requests]].map(x=>`<div class="stat ${x[2]||''}"><div class="n">${x[1]}</div><div class="l">${x[0]}</div></div>`).join('');};
-    renderCenters=function(){centerList.innerHTML=names().map(n=>{const c=data.centers[n],issues=typeof centerIssues==='function'?centerIssues(c):0,info=[`${(c.equipment||[]).length} equipos`,'2 plantas'];if(c.plants?.osmosis?.status!=='Sin información')info.push('Ósmosis '+c.plants.osmosis.status);if(c.plants?.treatment?.status!=='Sin información')info.push('Trat. aguas negras '+c.plants.treatment.status);return `<div class="center-card" onclick="openCenter('${n.replaceAll("'","\\'")}')"><h3>${n}</h3><div class="badges">${info.map(t=>`<span class="badge">${esc(t)}</span>`).join('')}${issues?`<span class="badge red">${issues} alerta${issues>1?'s':''}</span>`:'<span class="badge green">Sin alertas críticas</span>'}</div></div>`;}).join('');};
-    renderSummary=function(){const a=[];names().forEach(n=>{const c=data.centers[n];if(c.novelties)a.push(`<div class="alert"><b>${esc(n)}</b> — ${esc(c.novelties)}</div>`)});summaryAlerts.innerHTML=a.length?a.join(''):'<div class="empty">Aún no hay novedades registradas.</div>';const att=[];names().forEach(n=>{const c=data.centers[n];(c.equipment||[]).forEach(e=>{if(typeof mxRecalcEquipment==='function')try{mxRecalcEquipment(e)}catch(_){};if(['Vencido','Inoperativo'].includes(e.status))att.push(`<div class="attention"><b>${esc(n)} — ${esc(e.name||e.type)}</b><div class="helper">${esc(e.status)} ${e.notes?'· '+esc(e.notes):''}</div></div>`)});Object.entries(c.plants||{}).forEach(([k,p])=>{if(p.status==='Inoperativa')att.push(`<div class="attention"><b>${esc(n)} — ${k==='osmosis'?'Planta de Ósmosis':'Planta de Tratamiento de Aguas Negras'}</b><div class="helper">${esc(p.detail||'')}</div></div>`)})});attentionList.innerHTML=att.length?att.join(''):'<div class="empty">No hay equipos marcados como vencidos o inoperativos.</div>';};
-    renderFeeding=function(){feedingList.innerHTML=names().map(n=>{const f=data.centers[n].feeding||{},v=[['Blower',f.blower],['Selectoras',f.selectors],['Doser',f.dosers],['Tornillo',f.screw],['VFD',f.vfd]].filter(x=>x[1]&&x[1]!=='Sin información');if(!v.length&&!f.notes)return'';return `<div class="panel"><h2>${n}</h2><div class="badges">${v.map(x=>`<span class="badge ${x[1]==='Inoperativo'?'red':x[1]==='En observación'?'orange':'green'}">${x[0]}: ${x[1]}</span>`).join('')}</div>${f.notes?`<p class="helper">${esc(f.notes)}</p>`:''}</div>`}).join('')||'<div class="empty">Sin información de alimentación todavía.</div>';};
-    renderRequests=function(){const a=active(),rows=(data.requests||[]).map((r,i)=>({r,i})).filter(x=>a.includes(x.r.center)||x.r.center==='Área / Base Cisnes');requestTable.innerHTML=rows.map(({r,i})=>`<tr><td>${esc(r.center)}</td><td>${esc(r.equipment)}</td><td>${esc(r.material)}${r.notes?`<div class="helper">${esc(r.notes)}</div>`:''}</td><td>${esc(r.requestedTo)}</td><td>${esc(r.date)}</td><td class="status ${esc(r.status)}">${esc(r.status)}</td><td><button class="btn small danger" onclick="delRequest(${i})">Eliminar</button></td></tr>`).join('')||'<tr><td colspan="7" class="empty">Sin solicitudes</td></tr>';};
-    if(typeof rCenter!=='undefined'&&rCenter){const selected=rCenter.value;rCenter.innerHTML='';[...active(),'Área / Base Cisnes'].forEach(n=>rCenter.add(new Option(n,n)));if([...rCenter.options].some(o=>o.value===selected))rCenter.value=selected;}
-    const oldNew=newWeekly;newWeekly=function(){oldNew();names().forEach(n=>data.centers[n].weekBaseline=baseFor(n,data.centers[n]));data.meta=data.meta||{};data.meta.weekBaselineVersion=1;publishActive();localStorage.setItem('multixMantencion',JSON.stringify(data));renderAll();};
-    renderAll();
-  }
+function installDashboardRules(){if(window.__mxActiveDashInstalled)return;window.__mxActiveDashInstalled=true;publishActive();
+calcStats=function(){let equipment=0,vencidos=0,generators=0,boats=0,motocomp=0;names().forEach(n=>{const c=data.centers[n];equipment+=(c.equipment||[]).length;(c.equipment||[]).forEach(e=>{if(typeof mxRecalcEquipment==='function')try{mxRecalcEquipment(e)}catch(_){};if(['Vencido','Inoperativo'].includes(e.status))vencidos++;const t=((e.type||'')+' '+(e.name||'')).toLowerCase();if(t.includes('gener'))generators++;if(t.includes('bote'))boats++;if(t.includes('moto'))motocomp++;});});const a=active(),requests=(data.requests||[]).filter(r=>a.includes(r.center)||r.center==='Área / Base Cisnes').length;return{centers:a.length,equipment,vencidos,generators,boats,motocomp,plants:a.length*2,requests};};
+renderStats=function(){const s=calcStats();stats.innerHTML=[['centros',s.centers],['equipos',s.equipment],['vencidos',s.vencidos,'warn'],['generadores',s.generators],['plantas',s.plants],['solicitudes',s.requests]].map(x=>`<div class="stat ${x[2]||''}"><div class="n">${x[1]}</div><div class="l">${x[0]}</div></div>`).join('');};
+renderCenters=function(){centerList.innerHTML=names().map(n=>{const c=data.centers[n],issues=typeof centerIssues==='function'?centerIssues(c):0,info=[`${(c.equipment||[]).length} equipos`,'2 plantas'];return `<div class="center-card" onclick="openCenter('${n.replaceAll("'","\\'")}')"><h3>${n}</h3><div class="badges">${info.map(t=>`<span class="badge">${esc(t)}</span>`).join('')}${issues?`<span class="badge red">${issues} alerta${issues>1?'s':''}</span>`:'<span class="badge green">Sin alertas críticas</span>'}</div></div>`;}).join('');};
+renderSummary=function(){const a=[];names().forEach(n=>{const c=data.centers[n];if(c.novelties)a.push(`<div class="alert"><b>${esc(n)}</b> — ${esc(c.novelties)}</div>`)});summaryAlerts.innerHTML=a.length?a.join(''):'<div class="empty">Aún no hay novedades registradas.</div>';const att=[];names().forEach(n=>{const c=data.centers[n];(c.equipment||[]).forEach(e=>{if(typeof mxRecalcEquipment==='function')try{mxRecalcEquipment(e)}catch(_){};if(['Vencido','Inoperativo'].includes(e.status))att.push(`<div class="attention"><b>${esc(n)} — ${esc(e.name||e.type)}</b><div class="helper">${esc(e.status)} ${e.notes?'· '+esc(e.notes):''}</div></div>`)});Object.entries(c.plants||{}).forEach(([k,p])=>{if(p.status==='Inoperativa')att.push(`<div class="attention"><b>${esc(n)} — ${k==='osmosis'?'Planta de Ósmosis':'Planta de Tratamiento de Aguas Negras'}</b><div class="helper">${esc(p.detail||'')}</div></div>`)})});attentionList.innerHTML=att.length?att.join(''):'<div class="empty">No hay equipos marcados como vencidos o inoperativos.</div>';};
+renderFeeding=function(){feedingList.innerHTML=names().map(n=>{const f=data.centers[n].feeding||{},v=[['Blower',f.blower],['Selectoras',f.selectors],['Doser',f.dosers],['Tornillo',f.screw],['VFD',f.vfd]].filter(x=>x[1]&&x[1]!=='Sin información');if(!v.length&&!f.notes)return'';return `<div class="panel"><h2>${n}</h2><div class="badges">${v.map(x=>`<span class="badge">${x[0]}: ${x[1]}</span>`).join('')}</div>${f.notes?`<p class="helper">${esc(f.notes)}</p>`:''}</div>`}).join('')||'<div class="empty">Sin información de alimentación todavía.</div>';};
+renderRequests=function(){const a=active(),rows=(data.requests||[]).map((r,i)=>({r,i})).filter(x=>a.includes(x.r.center)||x.r.center==='Área / Base Cisnes');requestTable.innerHTML=rows.map(({r,i})=>`<tr><td>${esc(r.center)}</td><td>${esc(r.equipment)}</td><td>${esc(r.material)}</td><td>${esc(r.requestedTo)}</td><td>${esc(r.date)}</td><td>${esc(r.status)}</td><td><button class="btn small danger" onclick="delRequest(${i})">Eliminar</button></td></tr>`).join('')||'<tr><td colspan="7" class="empty">Sin solicitudes</td></tr>';};
+if(typeof rCenter!=='undefined'&&rCenter){rCenter.innerHTML='';[...active(),'Área / Base Cisnes'].forEach(n=>rCenter.add(new Option(n,n)));}
+const oldNew=newWeekly;newWeekly=function(){oldNew();names().forEach(n=>data.centers[n].weekBaseline=baseFor(n,data.centers[n]));publishActive();localStorage.setItem('multixMantencion',JSON.stringify(data));renderAll();};renderAll();}
 
-  function wait(){let n=0;const t=setInterval(()=>{n++;if(typeof renderAll==='function'&&typeof data!=='undefined'){clearInterval(t);installDashboardRules();}else if(n>100){clearInterval(t);}},100);}
-  if(document.readyState==='complete')wait();else window.addEventListener('load',wait,{once:true});
+// Alertas de mantención: visibles en la aplicación, nunca en la vista del informe.
+function hideReportAlerts(){const host=document.getElementById('mxReportPreview');if(!host)return;host.querySelectorAll('.mx-overdue-box').forEach(el=>el.remove());if(!host.dataset.mxAlertObserver){host.dataset.mxAlertObserver='1';new MutationObserver(()=>host.querySelectorAll('.mx-overdue-box').forEach(el=>el.remove())).observe(host,{childList:true,subtree:true});}}
+function wait(){let n=0;const t=setInterval(()=>{n++;if(typeof renderAll==='function'&&typeof data!=='undefined'){clearInterval(t);installDashboardRules();hideReportAlerts();}else if(n>100)clearInterval(t);},100);}
+if(document.readyState==='complete')wait();else window.addEventListener('load',wait,{once:true});
 })();
