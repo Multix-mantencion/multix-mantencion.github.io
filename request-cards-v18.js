@@ -3,7 +3,7 @@
   'use strict';
   const STATES=['Solicitado','En curso','En tránsito','Recibido'];
   const $=id=>document.getElementById(id);
-  const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
+  const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#039;'}[m]));
   const slug=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/\s+/g,'-');
   const activeCenters=()=>typeof window.mxGetActiveCenters==='function'?window.mxGetActiveCenters():null;
   const persist=()=>{try{localStorage.setItem('multixMantencion',JSON.stringify(data));}catch(_){}if(typeof window.mxPersistDraft==='function')try{window.mxPersistDraft(true);}catch(_){}};
@@ -126,4 +126,14 @@
   }
   function start(){let tries=0;const t=setInterval(()=>{tries++;if(install())clearInterval(t);else if(tries>100)clearInterval(t);},100);}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
+})();
+
+// Carga la corrección específica para creación/entrega de PDF en teléfonos.
+(function(){
+  if(document.getElementById('mxPdfMobileV19Loader'))return;
+  const s=document.createElement('script');
+  s.id='mxPdfMobileV19Loader';
+  s.src='pdf-mobile-v19.js?v=19';
+  s.async=false;
+  document.body.appendChild(s);
 })();
