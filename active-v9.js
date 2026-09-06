@@ -1,4 +1,4 @@
-// MultiX v9.3 — centros activos configurables, activos reales y alertas solo en aplicación
+// MultiX v9.4 — centros activos configurables, alertas solo en aplicación y módulo de horómetros
 (function(){
 'use strict';
 const DEFAULT_ACTIVE=['Ganso','Puyuhuapi 2','Pearson','Arbolito','Delta'];
@@ -29,8 +29,8 @@ renderRequests=function(){const a=active(),rows=(data.requests||[]).map((r,i)=>(
 if(typeof rCenter!=='undefined'&&rCenter){rCenter.innerHTML='';[...active(),'Área / Base Cisnes'].forEach(n=>rCenter.add(new Option(n,n)));}
 const oldNew=newWeekly;newWeekly=function(){oldNew();names().forEach(n=>data.centers[n].weekBaseline=baseFor(n,data.centers[n]));publishActive();localStorage.setItem('multixMantencion',JSON.stringify(data));renderAll();};renderAll();}
 
-// Alertas de mantención: visibles en la aplicación, nunca en la vista del informe.
 function hideReportAlerts(){const host=document.getElementById('mxReportPreview');if(!host)return;host.querySelectorAll('.mx-overdue-box').forEach(el=>el.remove());if(!host.dataset.mxAlertObserver){host.dataset.mxAlertObserver='1';new MutationObserver(()=>host.querySelectorAll('.mx-overdue-box').forEach(el=>el.remove())).observe(host,{childList:true,subtree:true});}}
-function wait(){let n=0;const t=setInterval(()=>{n++;if(typeof renderAll==='function'&&typeof data!=='undefined'){clearInterval(t);installDashboardRules();hideReportAlerts();}else if(n>100)clearInterval(t);},100);}
+function loadEquipmentModule(){if(document.getElementById('mxEquipmentV13Loader'))return;const s=document.createElement('script');s.id='mxEquipmentV13Loader';s.src='equipment-v13.js?v=13';s.async=false;s.onerror=()=>console.error('No se pudo cargar el módulo de horómetros');document.body.appendChild(s);}
+function wait(){let n=0;const t=setInterval(()=>{n++;if(typeof renderAll==='function'&&typeof data!=='undefined'){clearInterval(t);installDashboardRules();hideReportAlerts();loadEquipmentModule();}else if(n>100)clearInterval(t);},100);}
 if(document.readyState==='complete')wait();else window.addEventListener('load',wait,{once:true});
 })();
