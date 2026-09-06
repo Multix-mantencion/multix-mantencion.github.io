@@ -76,7 +76,7 @@
     <div class="field"><label>Empresas en terreno</label><textarea id="cCompanies"></textarea></div>
   </div>
   <div class="field"><label>Observaciones generales</label><textarea id="cObs"></textarea></div>
-  <div class="subhead">Equipos</div><div id="equipmentEditor"></div><button class="btn small" id="addEquipment">+ Agregar equipo</button>
+  <div class="subhead">Equipos</div><div class="equipment-help"><b>Solo debes actualizar las HORAS ACTUALES.</b> El nombre, última mantención, próxima mantención, serie y detalle quedan fijos.</div><div id="equipmentEditor"></div><button class="btn small" id="addEquipment">+ Agregar equipo</button>
   <div class="subhead">Plantas</div>
   <div class="grid2">
     <div class="panel"><b>Planta de Ósmosis</b><div class="field" style="margin-top:8px"><select id="osmosisStatus"><option>Sin información</option><option>Operativa</option><option>Inoperativa</option><option>En observación</option></select></div><div class="field"><textarea id="osmosisDetail" placeholder="Detalle"></textarea></div></div>
@@ -105,5 +105,17 @@
 <script src="stock-4.js?v=3"></script>
 <script src="app-core.js?v=3"></script>
 <script src="print.js?v=3"></script>
+<style>
+#addEquipment{display:none}.equipment-help{font-size:12px;color:var(--muted);margin:-3px 0 13px}.equipment-help b{color:var(--teal)}
+.eq-card{background:#0a1924;border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}.eq-card-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:12px}.eq-name{font-size:16px;font-weight:800}.eq-type{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-top:3px}.eq-status{font-size:11px;font-weight:800;padding:5px 8px;border-radius:999px;background:#17352f;color:#a9e5d5;white-space:nowrap}.eq-status.Vencido,.eq-status.Inoperativo{background:#4a2025;color:#ffb9bc}.eq-status.Próximo{background:#4a3514;color:#ffd995}.eq-hours-grid{display:grid;grid-template-columns:1.35fr 1fr 1fr 1.2fr;gap:10px}.eq-field,.eq-info{display:flex;flex-direction:column;gap:5px}.eq-field span,.eq-info span,.eq-notes span{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.65px;font-weight:700}.eq-current input{width:100%;background:#0d2230;border:1px solid var(--teal);color:var(--text);padding:12px;border-radius:9px;font-size:18px;font-weight:800;outline:none}.eq-current small{font-size:10px;color:var(--teal)}.eq-info{background:#0d1d29;border:1px solid var(--line);border-radius:9px;padding:10px}.eq-info strong{font-size:14px;word-break:break-word}.eq-notes{margin-top:10px;border-top:1px solid var(--line);padding-top:10px;font-size:12px;color:#c9d6dd;line-height:1.4}.eq-notes span{display:block;margin-bottom:4px}
+@media(max-width:760px){.eq-hours-grid{grid-template-columns:1fr 1fr}.eq-current{grid-column:1/-1}.eq-info:last-child{grid-column:1/-1}}
+</style>
+<script>
+function mxParseHours(v){const t=String(v??'').replace(/\s/g,'').replace(/\./g,'').replace(',','.');const n=Number(t);return Number.isFinite(n)?n:null}
+function mxHourStatus(e){if(['Inoperativo','En observación'].includes(e.status))return e.status;const cur=mxParseHours(e.current),next=mxParseHours(e.next);if(cur===null||next===null)return e.status||'OK';if(cur>=next)return 'Vencido';if(next-cur<=50)return 'Próximo';return 'OK'}
+renderEqEditor=function(){const c=data.centers[currentCenter];equipmentEditor.innerHTML=c.equipment.map((e,i)=>{const st=mxHourStatus(e);e.status=st;return `<div class="eq-card"><div class="eq-card-head"><div><div class="eq-name">${esc(e.name||e.type||'Equipo')}</div><div class="eq-type">${esc(e.type||'Equipo')}</div></div><span class="eq-status ${esc(st)}">${esc(st)}</span></div><div class="eq-hours-grid"><label class="eq-field eq-current"><span>HORÓMETRO ACTUAL (HORAS)</span><input data-i="${i}" data-k="current" inputmode="decimal" value="${attr(e.current)}" placeholder="Ej: 13622"><small>Ingrese aquí solamente las horas actuales.</small></label><div class="eq-info"><span>ÚLTIMA MANTENCIÓN</span><strong>${esc(e.last||'Sin dato')}</strong></div><div class="eq-info"><span>PRÓXIMA MANTENCIÓN</span><strong>${esc(e.next||'Sin dato')}</strong></div><div class="eq-info"><span>N° SERIE / REGISTRO</span><strong>${esc(e.reg||'Sin dato')}</strong></div></div>${e.notes?`<div class="eq-notes"><span>DETALLE DEL EQUIPO</span>${esc(e.notes)}</div>`:''}</div>`}).join('')||'<div class="empty">Sin equipos registrados en este centro.</div>'}
+collectEq=function(){document.querySelectorAll('#equipmentEditor input[data-k="current"]').forEach(el=>{const i=+el.dataset.i,e=data.centers[currentCenter].equipment[i];e.current=el.value.trim();e.status=mxHourStatus(e)})}
+</script>
+
 </body>
 </html>
