@@ -113,3 +113,8 @@
   function start(){let n=0;const t=setInterval(()=>{n++;if(install()){clearInterval(t);if(typeof renderAll==='function')renderAll();}else if(n>100)clearInterval(t);},100);}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
+
+(function(){
+  if(document.getElementById('mxBoatAssignmentsV22'))return;
+  const s=document.createElement('script');s.id='mxBoatAssignmentsV22';s.src='boat-assignments-v22.js?v=22';s.async=false;s.onerror=()=>console.error('No se pudo cargar la asignación de botes v22');document.body.appendChild(s);
+})();
