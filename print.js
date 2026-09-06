@@ -95,7 +95,6 @@
     }catch(err){
       console.error('Error creando PDF',err);
       if(btn){btn.disabled=false;btn.textContent=previous;}
-      // Respaldo especialmente útil en Safari/iPhone: abre el diálogo nativo inmediatamente.
       try{
         if(typeof window.buildPrint==='function') window.buildPrint();
         window.print();
@@ -105,11 +104,9 @@
     }
   }
 
-  // Precarga la librería para que al tocar el botón en el celular responda de inmediato.
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',()=>loadPdfLibrary().catch(()=>{}));
   else loadPdfLibrary().catch(()=>{});
 
-  // Captura el clic antes que los manejadores antiguos. Así evitamos el setTimeout que Safari móvil puede bloquear.
   document.addEventListener('click',e=>{
     const btn=e.target?.closest?.('#pdfBtn');
     if(!btn) return;
@@ -117,4 +114,133 @@
     e.stopImmediatePropagation();
     createPdf();
   },true);
+})();
+
+// MultiX: vista previa del borrador semanal dentro de la aplicación.
+(function(){
+  function photoCount(){
+    try{return Object.values(window.data?.centers||{}).reduce((n,c)=>n+(c.photos?.length||0),0);}catch(_){return 0;}
+  }
+
+  function installPreviewStyles(){
+    if(document.getElementById('mxReportPreviewStyles'))return;
+    const st=document.createElement('style');
+    st.id='mxReportPreviewStyles';
+    st.textContent=`
+      .mx-report-toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+      .mx-report-status{background:#0a1924;border:1px solid var(--line);border-radius:12px;padding:11px 13px;margin-bottom:14px;color:var(--muted);font-size:12px;line-height:1.45}
+      .mx-report-status b{color:var(--teal)}
+      .mx-report-sheet-wrap{overflow:auto;padding:2px 0 24px}
+      .mx-report-sheet{width:min(100%,850px);margin:0 auto;background:#fff;color:#172033;border-radius:17px;padding:30px 32px;box-shadow:0 8px 30px rgba(0,0,0,.28);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;line-height:1.4}
+      .mx-report-sheet .pr-logo{height:38px;max-width:180px;object-fit:contain;margin-bottom:11px}
+      .mx-report-sheet .pr-title{font-size:28px;line-height:1.08;margin:0;color:#172033;font-weight:850;letter-spacing:.2px}
+      .mx-report-sheet .pr-sub{font-size:14px;color:#566171;margin:5px 0 18px}
+      .mx-report-sheet .pr-meta{display:grid;grid-template-columns:repeat(4,1fr);gap:13px;border-bottom:3px solid #172033;padding-bottom:15px;margin-bottom:22px;font-size:13px}
+      .mx-report-sheet .pr-meta b{display:block;color:#778191;font-size:10px;letter-spacing:.6px;text-transform:uppercase;margin-bottom:5px}
+      .mx-report-sheet .pr-center{margin:0 0 26px}
+      .mx-report-sheet .pr-center.page-break{break-before:auto}
+      .mx-report-sheet .pr-center h2{font-size:19px;line-height:1.2;margin:0 0 15px;padding:10px 13px;background:#f2f4f6;border-radius:8px;color:#172033}
+      .mx-report-sheet .pr-section{margin:13px 0}
+      .mx-report-sheet .pr-section h3{font-size:13px;color:#0a8790;text-transform:uppercase;letter-spacing:.5px;margin:0 0 7px}
+      .mx-report-sheet .pr-section p,.mx-report-sheet .pr-section li{font-size:14px;color:#3f4a5b;line-height:1.45;margin:4px 0}
+      .mx-report-sheet .pr-table{width:100%;border-collapse:collapse;table-layout:fixed;margin:6px 0 11px}
+      .mx-report-sheet .pr-table th{font-size:9px;text-transform:uppercase;letter-spacing:.35px;color:#778191;text-align:left;padding:7px 5px;border-bottom:1px solid #ccd4db}
+      .mx-report-sheet .pr-table td{font-size:11px;vertical-align:top;padding:8px 5px;border-bottom:1px solid #e0e5e9;color:#283444;word-break:break-word}
+      .mx-report-sheet .pr-equipment{margin-bottom:14px}
+      .mx-report-sheet .pr-photo-section{margin:9px 0 16px}
+      .mx-report-sheet .pr-photo-section h4{font-size:11px;text-transform:uppercase;color:#0a8790;margin:0 0 7px}
+      .mx-report-sheet .pr-photos{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+      .mx-report-sheet .pr-photos figure{margin:0;background:#f5f6f7;border-radius:9px;overflow:hidden}
+      .mx-report-sheet .pr-photos img{display:block;width:100%;height:210px;object-fit:cover}
+      .mx-report-sheet .pr-photos figcaption{font-size:10px;color:#596474;padding:7px 8px}
+      .mx-report-sheet small{font-size:9px;color:#6a7481}
+      .mx-report-empty{padding:28px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:14px}
+      .mx-report-draft-pill{display:inline-flex;align-items:center;gap:6px;padding:5px 9px;border-radius:999px;background:#153a34;color:#a9e5d5;font-size:10px;font-weight:800;letter-spacing:.4px;margin-left:6px}
+      @media(max-width:760px){
+        .mx-report-toolbar .btn{flex:1;min-width:130px}
+        .mx-report-sheet{padding:20px 18px;border-radius:14px}
+        .mx-report-sheet .pr-title{font-size:23px}
+        .mx-report-sheet .pr-meta{grid-template-columns:1fr 1fr;gap:11px;font-size:12px}
+        .mx-report-sheet .pr-center h2{font-size:17px}
+        .mx-report-sheet .pr-section p,.mx-report-sheet .pr-section li{font-size:13px}
+        .mx-report-sheet .pr-table th{font-size:8px;padding:6px 3px}
+        .mx-report-sheet .pr-table td{font-size:9px;padding:7px 3px}
+        .mx-report-sheet .pr-photos{grid-template-columns:1fr}
+        .mx-report-sheet .pr-photos img{height:auto;max-height:300px}
+      }
+    `;
+    document.head.appendChild(st);
+  }
+
+  function renderPreview(){
+    const host=document.getElementById('mxReportPreview');
+    const status=document.getElementById('mxReportPreviewStatus');
+    if(!host)return;
+    try{
+      if(typeof window.mxPersistDraft==='function')window.mxPersistDraft(true);
+      if(typeof window.buildPrint!=='function'){
+        host.innerHTML='<div class="mx-report-empty">Preparando la vista del informe… intenta nuevamente en unos segundos.</div>';
+        return;
+      }
+      window.buildPrint();
+      const source=document.getElementById('printReport');
+      const html=source?.innerHTML?.trim()||'';
+      host.innerHTML=html?`<div class="mx-report-sheet">${html}</div>`:'<div class="mx-report-empty">Aún no hay información en el borrador semanal.</div>';
+      if(status){
+        const now=new Date().toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit'});
+        const start=window.data?.meta?.start||'Sin fecha';
+        const end=window.data?.meta?.end||'Sin fecha';
+        status.innerHTML=`<b>Borrador semanal en curso</b> · ${start} → ${end} · ${photoCount()} foto${photoCount()===1?'':'s'} · vista actualizada ${now}. <span class="mx-report-draft-pill">NO CIERRA LA SEMANA</span>`;
+      }
+    }catch(err){
+      console.error('Error mostrando vista previa',err);
+      host.innerHTML='<div class="mx-report-empty">No se pudo preparar la vista del informe. Guarda el avance e inténtalo nuevamente.</div>';
+    }
+  }
+  window.mxRenderReportPreview=renderPreview;
+
+  function copyReportText(){
+    const sheet=document.querySelector('#mxReportPreview .mx-report-sheet');
+    if(!sheet)return;
+    const text=sheet.innerText.trim();
+    if(navigator.clipboard?.writeText){
+      navigator.clipboard.writeText(text).then(()=>alert('Texto del informe copiado.')).catch(()=>{});
+      return;
+    }
+    const ta=document.createElement('textarea');ta.value=text;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();alert('Texto del informe copiado.');
+  }
+
+  function installPreviewUI(){
+    if(document.getElementById('mxReportTab'))return;
+    installPreviewStyles();
+    const tabs=document.querySelector('.tabs');
+    if(!tabs)return;
+    const tab=document.createElement('button');
+    tab.className='tab';tab.id='mxReportTab';tab.dataset.tab='report';tab.textContent='Informe';
+    const historyTab=tabs.querySelector('[data-tab="history"]');
+    historyTab?tabs.insertBefore(tab,historyTab):tabs.appendChild(tab);
+
+    const section=document.createElement('section');
+    section.className='section';section.id='report';
+    section.innerHTML=`<div class="panel"><div class="mx-report-toolbar"><button class="btn" id="mxRefreshReport">Actualizar vista</button><button class="btn" id="mxCopyReport">Copiar texto</button><button class="btn primary" id="mxCreatePdfFromPreview">Crear PDF</button></div><div class="mx-report-status" id="mxReportPreviewStatus"><b>Borrador semanal en curso.</b> Esta vista muestra lo que llevas guardado hasta ahora, incluidas las fotografías.</div></div><div class="mx-report-sheet-wrap" id="mxReportPreview"></div>`;
+    const history=document.getElementById('history');
+    history?.parentNode?.insertBefore(section,history);
+
+    tab.onclick=()=>{
+      if(typeof window.mxPersistDraft==='function')window.mxPersistDraft(true);
+      if(typeof window.switchTab==='function')window.switchTab('report');
+      setTimeout(renderPreview,30);
+    };
+    document.getElementById('mxRefreshReport').onclick=renderPreview;
+    document.getElementById('mxCopyReport').onclick=copyReportText;
+    document.getElementById('mxCreatePdfFromPreview').onclick=()=>document.getElementById('pdfBtn')?.click();
+
+    const save=document.getElementById('saveBtn');
+    save?.addEventListener('click',()=>setTimeout(()=>{
+      if(document.getElementById('report')?.classList.contains('active'))renderPreview();
+    },120));
+  }
+
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',installPreviewUI);
+  else installPreviewUI();
 })();
