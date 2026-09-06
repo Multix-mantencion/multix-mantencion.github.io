@@ -3,5 +3,9 @@ window.MULTIX_BASE.stock.push(...[{"id":"stk-71","material":"VDF BLOWER BACK UP"
 // Carga las mejoras operativas después de que la aplicación base esté lista.
 window.addEventListener('load',()=>{
   const load=(src)=>new Promise((resolve,reject)=>{const s=document.createElement('script');s.src=src;s.async=false;s.onload=resolve;s.onerror=reject;document.body.appendChild(s);});
-  load('overrides-v6.js?v=13').then(()=>load('active-v9.js?v=13')).catch(err=>console.error('No se pudieron cargar las mejoras MultiX',err));
+  load('overrides-v6.js?v=14')
+    .then(()=>load('active-v9.js?v=14'))
+    .then(()=>load('equipment-v13.js?v=14'))
+    .then(()=>load('ensilage-v14.js?v=14'))
+    .catch(err=>console.error('No se pudieron cargar las mejoras MultiX',err));
 },{once:true});
