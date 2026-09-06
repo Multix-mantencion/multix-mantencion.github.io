@@ -16,7 +16,8 @@ function mxInstallV6UI(){
 #addEquipment{display:none}.equipment-help{font-size:12px;color:var(--muted);margin:-3px 0 13px}.equipment-help b{color:var(--teal)}
 .eq-card{background:#0a1924;border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}.eq-card-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:12px}.eq-name{font-size:16px;font-weight:800}.eq-type{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-top:3px}.eq-status{font-size:11px;font-weight:800;padding:5px 8px;border-radius:999px;background:#17352f;color:#a9e5d5;white-space:nowrap}.eq-status.Vencido,.eq-status.Inoperativo{background:#4a2025;color:#ffb9bc}.eq-status.Próximo{background:#4a3514;color:#ffd995}.eq-hours-grid{display:grid;grid-template-columns:1.2fr 1.2fr 1fr 1.1fr;gap:10px}.eq-field,.eq-info{display:flex;flex-direction:column;gap:5px}.eq-field span,.eq-info span,.eq-notes span{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.65px;font-weight:700}.eq-field input{width:100%;background:#0d2230;border:1px solid var(--teal);color:var(--text);padding:12px;border-radius:9px;font-size:17px;font-weight:800;outline:none}.eq-field small,.eq-info small{font-size:10px;color:var(--teal)}.eq-info{background:#0d1d29;border:1px solid var(--line);border-radius:9px;padding:10px}.eq-info strong{font-size:14px;word-break:break-word}.eq-notes{margin-top:10px;border-top:1px solid var(--line);padding-top:10px;font-size:12px;color:#c9d6dd;line-height:1.4}.eq-notes span{display:block;margin-bottom:4px}
 .photo-upload-panel{background:#0a1924;border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px;display:grid;grid-template-columns:1fr 1fr;gap:10px}.photo-linked{background:#0a1924;border:1px solid var(--line);border-radius:12px;padding:8px}.photo-linked select,.photo-linked input{width:100%;margin-top:6px;background:#0d1d29;border:1px solid var(--line);border-radius:8px;color:var(--text);padding:8px;font-size:12px}.photo-meta{padding:7px 2px 2px;display:flex;flex-direction:column;gap:2px}.photo-meta b{font-size:12px;color:var(--teal)}.photo-meta span{font-size:11px;color:var(--muted)}
-@media(max-width:760px){.eq-hours-grid{grid-template-columns:1fr 1fr}.eq-info:last-child{grid-column:1/-1}.photo-upload-panel{grid-template-columns:1fr}}
+.mx-draft-card{border:1px solid var(--teal);background:#0a2428}.mx-history-actions{display:flex;gap:8px;flex-wrap:wrap}.mx-history-note{background:#0a1924;border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:12px}.mx-history-note b{color:var(--teal)}
+@media(max-width:760px){.eq-hours-grid{grid-template-columns:1fr 1fr}.eq-info:last-child{grid-column:1/-1}.photo-upload-panel{grid-template-columns:1fr}.history-item{align-items:flex-start;flex-direction:column}.mx-history-actions{width:100%}.mx-history-actions .btn{flex:1}}
 @media print{.pr-equipment{break-inside:avoid;margin-bottom:10px}.pr-photo-section{margin:7px 0 11px;break-inside:avoid}.pr-photo-section h4{font-size:9px;text-transform:uppercase;margin:0 0 5px;color:#0f7e90}.pr-photos figure{margin:0}.pr-photos figcaption{font-size:8px;margin-top:2px;color:#4f5a63}.pr-photos img{width:100%;max-height:170px;object-fit:cover}.pr-photos{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}}`;
     document.head.appendChild(st);
   }
@@ -72,6 +73,7 @@ function mxEqInputChanged(i,key,value){
   const next=document.getElementById(`mx-next-${i}`), st=document.getElementById(`mx-status-${i}`);
   if(next)next.textContent=mxFormatHours(e.next);
   if(st){st.textContent=e.status||'OK';st.className='eq-status '+(e.status||'OK');}
+  mxScheduleAutosave();
 }
 collectEq=function(){
   document.querySelectorAll('#equipmentEditor input[data-i][data-k]').forEach(el=>{
@@ -126,6 +128,7 @@ addPhotos=async function(files){
     const dataUrl=await compressImage(f);
     data.centers[currentCenter].photos.push({name:f.name,data:dataUrl,...meta,component});
   }
+  mxPersistDraft(true);
   renderPhotos();
 };
 renderPhotos=function(){
@@ -139,13 +142,17 @@ renderPhotos=function(){
     </div>`;
   }).join('')||'<div class="empty">Aún no hay fotografías para este centro.</div>';
 };
+delPhoto=function(i){
+  const c=data.centers[currentCenter]; if(!c?.photos?.[i])return;
+  c.photos.splice(i,1); mxPersistDraft(true); renderPhotos();
+};
 function mxUpdatePhotoTarget(i,value){
   const p=data.centers[currentCenter].photos[i]; if(!p)return;
-  Object.assign(p,mxTargetMeta(value)); localStorage.setItem('multixMantencion',JSON.stringify(data));renderPhotos();
+  Object.assign(p,mxTargetMeta(value)); mxPersistDraft(true); renderPhotos();
 }
 function mxUpdatePhotoComponent(i,value){
   const p=data.centers[currentCenter].photos[i]; if(!p)return;
-  p.component=value.trim();localStorage.setItem('multixMantencion',JSON.stringify(data));renderPhotos();
+  p.component=value.trim();mxPersistDraft(true);renderPhotos();
 }
 
 function mxPhotoMatchesEquipment(p,e,i){
@@ -196,4 +203,88 @@ buildPrint=function(){
   root.innerHTML=parts.join('');
 };
 
+// ---- Borrador semanal, guardado diario y eliminación de informes archivados ----
+function mxSyncOpenCenterDraft(){
+  if(!currentCenter || !editor?.classList?.contains('open'))return;
+  collectEq();
+  const c=data.centers[currentCenter]; if(!c)return;
+  c.novelties=cNov.value;
+  c.works=cWorks.value;
+  c.pending=cPending.value;
+  c.companies=cCompanies.value;
+  c.observations=cObs.value;
+  c.plants.osmosis={status:osmosisStatus.value,detail:osmosisDetail.value};
+  c.plants.treatment={status:treatmentStatus.value,detail:treatmentDetail.value};
+  c.feeding={blower:fBlower.value,selectors:fSelectors.value,dosers:fDosers.value,screw:fScrew.value,vfd:fVfd.value,notes:fNotes.value};
+}
+function mxPersistDraft(silent=false){
+  try{
+    mxSyncOpenCenterDraft();
+    syncMeta();
+    localStorage.setItem('multixMantencion',JSON.stringify(data));
+    const now=new Date().toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit'});
+    if(saveState)saveState.textContent='Borrador guardado '+now;
+    if(!silent)renderAll();
+    return true;
+  }catch(err){
+    if(saveState)saveState.textContent='No se pudo guardar';
+    if(!silent)alert('No se pudo guardar el avance. Si agregaste muchas fotografías, puede haberse llenado el almacenamiento del navegador.');
+    return false;
+  }
+}
+let mxAutosaveTimer=null;
+function mxScheduleAutosave(){
+  clearTimeout(mxAutosaveTimer);
+  mxAutosaveTimer=setTimeout(()=>mxPersistDraft(true),650);
+}
+
+function mxDeleteHistory(i){
+  const h=data.history||[]; if(!h[i])return;
+  const label=`${h[i].meta?.start||'Sin fecha'} → ${h[i].meta?.end||'Sin fecha'}`;
+  if(!confirm(`¿Eliminar definitivamente el informe archivado ${label}?\n\nEsto NO elimina el borrador semanal que estás llenando ahora.`))return;
+  h.splice(i,1);
+  data.history=h;
+  localStorage.setItem('multixMantencion',JSON.stringify(data));
+  renderHistory();
+  if(saveState)saveState.textContent='Informe archivado eliminado';
+}
+window.mxDeleteHistory=mxDeleteHistory;
+
+renderHistory=function(){
+  const h=data.history||[];
+  const period=`${esc(data.meta?.start||'Sin fecha')} → ${esc(data.meta?.end||'Sin fecha')}`;
+  const draft=`<div class="history-item mx-draft-card"><div><b>Borrador semanal activo · ${period}</b><div class="helper">Puedes seguir llenándolo todos los días. <b>Guardar avance</b> conserva la información y NO genera ni cierra el informe.</div></div><span class="badge green">EN CURSO</span></div>`;
+  const note=`<div class="mx-history-note"><b>Flujo recomendado:</b> durante la semana usa “Guardar avance”. El domingo usa “Exportar PDF”. Cuando ya terminaste la semana, recién usa “Cerrar semana / Nuevo informe” para archivarla y comenzar la siguiente.</div>`;
+  const archived=h.length?h.map((x,i)=>`<div class="history-item"><div><b>${esc(x.meta?.start||'Sin fecha')} → ${esc(x.meta?.end||'Sin fecha')}</b><div class="helper">Informe archivado · ${esc(x.meta?.mechanic||'Sin mecánico')} · ${x.requests?.length||0} solicitudes</div></div><div class="mx-history-actions"><button class="btn small" onclick="restoreHistory(${i})">Abrir</button><button class="btn small danger" onclick="mxDeleteHistory(${i})">Eliminar</button></div></div>`).join(''):'<div class="empty">Todavía no hay informes archivados.</div>';
+  historyList.innerHTML=draft+note+archived+`<div class="btnrow"><button class="btn" onclick="backupJSON()">Respaldar datos</button><button class="btn" onclick="restoreInput.click()">Cargar respaldo</button></div>`;
+};
+
+saveBtn.textContent='Guardar avance';
+saveBtn.title='Guarda el borrador actual para seguir completándolo durante la semana';
+saveBtn.onclick=()=>mxPersistDraft(false);
+newBtn.textContent='Cerrar semana / Nuevo informe';
+newBtn.title='Archiva la semana actual y comienza una nueva';
+newBtn.onclick=()=>{
+  mxPersistDraft(true);
+  if(confirm('¿Cerrar la semana actual y crear un informe nuevo?\n\nHaz esto solo cuando ya terminaste el informe semanal. El borrador actual quedará archivado en Historial.'))newWeekly();
+};
+pdfBtn.onclick=()=>{
+  mxPersistDraft(true);
+  buildPrint();
+  setTimeout(()=>window.print(),150);
+};
+
+// Autoguardado: protege el avance aunque el usuario olvide presionar Guardar.
+document.addEventListener('input',e=>{
+  const el=e.target;
+  if(el && (el.matches('input:not([type="file"]), textarea')||el.closest?.('#equipmentEditor')))mxScheduleAutosave();
+},true);
+document.addEventListener('change',e=>{
+  const el=e.target;
+  if(el && el.matches('select,input:not([type="file"])'))mxScheduleAutosave();
+},true);
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')mxPersistDraft(true);});
+window.addEventListener('beforeunload',()=>mxPersistDraft(true));
+
 mxInstallV6UI();
+renderHistory();
