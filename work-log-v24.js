@@ -72,6 +72,12 @@
       .mx-span2{grid-column:span 2}.mx-add{height:44px;border:0;border-radius:10px;background:#193245;color:#eef9fa;font-weight:900;padding:0 18px;cursor:pointer}
       .mx-help{font-size:11px;color:var(--muted);margin:7px 0 16px;line-height:1.4}.mx-divider{border-top:1px solid var(--line);margin:18px 0 12px}
       .mx-failure-state{min-width:125px;background:#0d2230;border:1px solid #315164;color:var(--text);border-radius:8px;padding:7px 8px}
+      .mx-corp-card{border:1px solid #284454;border-radius:16px;padding:14px;margin:10px 0 14px;background:linear-gradient(180deg,#0b1c28,#091821)}
+      .mx-corp-card.records{border-color:#294555}.mx-corp-card.entry{border-color:#2e8f91;box-shadow:inset 0 0 0 1px rgba(74,211,203,.08)}
+      .mx-corp-card.failure-entry{border-color:#8b3b48}.mx-corp-card.failure-records{border-color:#603841}
+      .mx-card-head{display:flex;align-items:flex-start;gap:10px;margin-bottom:12px}.mx-card-icon{width:32px;height:32px;border-radius:10px;display:grid;place-items:center;background:#0d3140;color:#5ce0d4;font-weight:950;flex:0 0 auto}
+      .mx-card-head b{display:block;font-size:16px;color:var(--text)}.mx-card-head small{display:block;color:var(--muted);font-size:11px;margin-top:3px;line-height:1.35}.failure-entry .mx-card-icon,.failure-records .mx-card-icon{background:#351d25;color:#ff8b97}
+      .mx-corp-card .mx-help{margin:9px 1px 0}.mx-corp-card .mx-work-list,.mx-corp-card .mx-failure-list{margin-bottom:0}
       @media(max-width:980px){.mx-form{grid-template-columns:1fr 1fr}.mx-span2{grid-column:span 2}.mx-add{grid-column:1/-1}}
       @media(max-width:620px){.mx-form{grid-template-columns:1fr}.mx-span2,.mx-add{grid-column:1}.mx-add{height:48px}.mx-del{margin-left:0}.mx-work-top,.mx-failure-top{align-items:flex-start}.mx-failure-state{width:100%}}
     `;document.head.appendChild(s);
@@ -86,29 +92,41 @@
     box=document.createElement('div');box.id='mxMaintenanceV24';box.className='mx-maint-box';
     box.innerHTML=`
       <div class="mx-section-title">Trabajos realizados</div>
-      <div id="mxWorkListV24" class="mx-work-list"></div>
-      <div class="mx-form">
-        <div class="field"><label>Fecha</label><input id="mxWorkDateV24" type="date"></div>
-        <div class="field"><label>Equipo / componente</label><select id="mxWorkEquipmentV24"></select></div>
-        <div class="field"><label>Tipo de mantenimiento</label><select id="mxWorkTypeV24">${optionList(workTypes,'Correctivo')}</select></div>
-        <div class="field"><label>Relacionado con una falla</label><select id="mxWorkFailureV24"></select></div>
-        <div class="field mx-span2"><label>Trabajo realizado</label><input id="mxWorkTextV24" placeholder="Ej: Cambio sensor de temperatura"></div>
-        <div class="field"><label>Mecánico</label><input id="mxWorkMechanicV24" placeholder="Nombre"></div>
-        <button type="button" id="mxWorkAddV24" class="mx-add">+ Guardar trabajo</button>
-      </div>
-      <div class="mx-help">Clasificar cada trabajo permitirá obtener estadísticas reales de mantenimiento correctivo, preventivo y predictivo.</div>
+      <section class="mx-corp-card records">
+        <div class="mx-card-head"><span class="mx-card-icon">✓</span><div><b>Trabajos registrados</b><small>Trabajos ya guardados para este centro durante la semana.</small></div></div>
+        <div id="mxWorkListV24" class="mx-work-list"></div>
+      </section>
+      <section class="mx-corp-card entry">
+        <div class="mx-card-head"><span class="mx-card-icon">＋</span><div><b>Agregar nuevo trabajo</b><small>Completa los campos para crear un registro nuevo. No modifica los trabajos guardados.</small></div></div>
+        <div class="mx-form">
+          <div class="field"><label>Fecha</label><input id="mxWorkDateV24" type="date"></div>
+          <div class="field"><label>Equipo / componente</label><select id="mxWorkEquipmentV24"></select></div>
+          <div class="field"><label>Tipo de mantenimiento</label><select id="mxWorkTypeV24">${optionList(workTypes,'Correctivo')}</select></div>
+          <div class="field"><label>Relacionado con una falla</label><select id="mxWorkFailureV24"></select></div>
+          <div class="field mx-span2"><label>Trabajo realizado</label><input id="mxWorkTextV24" placeholder="Ej: Cambio sensor de temperatura"></div>
+          <div class="field"><label>Mecánico</label><input id="mxWorkMechanicV24" placeholder="Nombre"></div>
+          <button type="button" id="mxWorkAddV24" class="mx-add">Guardar trabajo</button>
+        </div>
+        <div class="mx-help">Clasificar cada trabajo permitirá medir correctamente el mantenimiento correctivo, preventivo y predictivo.</div>
+      </section>
       <div class="mx-divider"></div>
-      <div class="mx-section-title">Registro de fallas</div>
-      <div id="mxFailureListV24" class="mx-failure-list"></div>
-      <div class="mx-form">
-        <div class="field"><label>Fecha</label><input id="mxFailureDateV24" type="date"></div>
-        <div class="field"><label>Equipo / componente</label><select id="mxFailureEquipmentV24"></select></div>
-        <div class="field"><label>Tipo de falla</label><select id="mxFailureTypeV24">${optionList(failureTypes,'Mecánica')}</select></div>
-        <div class="field"><label>Estado</label><select id="mxFailureStateV24">${optionList(failureStates,'Abierta')}</select></div>
-        <div class="field mx-span2"><label>Descripción de la falla</label><input id="mxFailureTextV24" placeholder="Ej: Baja presión de aceite"></div>
-        <button type="button" id="mxFailureAddV24" class="mx-add">+ Registrar falla</button>
-      </div>
-      <div class="mx-help">Una falla se cuenta una sola vez aunque tenga varios trabajos asociados. Así los futuros gráficos no inflarán las estadísticas.</div>`;
+      <div class="mx-section-title">Fallas</div>
+      <section class="mx-corp-card records failure-records">
+        <div class="mx-card-head"><span class="mx-card-icon">!</span><div><b>Fallas registradas</b><small>Historial de fallas reportadas para este centro.</small></div></div>
+        <div id="mxFailureListV24" class="mx-failure-list"></div>
+      </section>
+      <section class="mx-corp-card entry failure-entry">
+        <div class="mx-card-head"><span class="mx-card-icon">＋</span><div><b>Registrar nueva falla</b><small>Cada falla se registra una sola vez y luego puede vincularse a uno o más trabajos.</small></div></div>
+        <div class="mx-form">
+          <div class="field"><label>Fecha</label><input id="mxFailureDateV24" type="date"></div>
+          <div class="field"><label>Equipo / componente</label><select id="mxFailureEquipmentV24"></select></div>
+          <div class="field"><label>Tipo de falla</label><select id="mxFailureTypeV24">${optionList(failureTypes,'Mecánica')}</select></div>
+          <div class="field"><label>Estado</label><select id="mxFailureStateV24">${optionList(failureStates,'Abierta')}</select></div>
+          <div class="field mx-span2"><label>Descripción de la falla</label><input id="mxFailureTextV24" placeholder="Ej: Baja presión de aceite"></div>
+          <button type="button" id="mxFailureAddV24" class="mx-add">Registrar falla</button>
+        </div>
+        <div class="mx-help">Una falla se cuenta una sola vez aunque tenga varios trabajos asociados.</div>
+      </section>`;
     ta.parentNode.insertBefore(box,ta.nextSibling);
     $('mxWorkAddV24').onclick=addWork;
     $('mxFailureAddV24').onclick=addFailure;
@@ -201,4 +219,9 @@
     },100);
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
+})();
+
+(function(){
+  if(document.getElementById('mxCorporateUiV25Loader'))return;
+  const s=document.createElement('script');s.id='mxCorporateUiV25Loader';s.src='corporate-ui-v25.js?v=25';s.async=false;s.onerror=()=>console.error('No se pudo cargar la interfaz corporativa v25');document.body.appendChild(s);
 })();
