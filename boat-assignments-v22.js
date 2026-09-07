@@ -30,7 +30,7 @@ function install(){
   if(!playa){
     const found=findAndRemoveBoat(n=>n.includes('playa bonita')||n.includes('plata bonita'));
     playa=found?.equipment||null;
-    if(playa)pearson.equipment.push(playa);
+    if(playa)pearson.equipment.push(playya);
   }
   if(!playa){
     playa={id:'pearson-playa-bonita',name:'Playa Bonita',type:'Bote / Motor fuera de borda',brand:'Yamaha',model:'FT50CET',reg:'PMO-6601',current:'770',last:'',next:'',interval:'300',status:'OK',notes:'Motor Yamaha 64J · Serie L 1026008'};
@@ -59,12 +59,13 @@ let n=0;const t=setInterval(()=>{n++;if(install()||n>100)clearInterval(t);},100)
 // Carga secuencial: estabilización, informes históricos, trabajos/fallas, inicio corporativo y barra de comandos.
 (function(){
   const scripts=[
-    {id:'mxStartupStabilityV31Loader',src:'startup-stability-v31.js?v=31',err:'No se pudo cargar el estabilizador de inicio v31'},
-    {id:'mxReport20260824V26Loader',src:'report-2026-08-24-v26.js?v=31',err:'No se pudo cargar el informe histórico 24-08 al 30-08'},
-    {id:'mxReport20260901V28Loader',src:'report-2026-09-01-v28.js?v=31',err:'No se pudo cargar el informe histórico 01-09 al 06-09'},
-    {id:'mxWorkLogV24Loader',src:'work-log-v24.js?v=31',err:'No se pudo cargar mantenimiento y fallas v24'},
-    {id:'mxDashboardExactV29Loader',src:'dashboard-exact-v29.js?v=31',err:'No se pudo cargar el inicio corporativo v29'},
-    {id:'mxCommandDockV30Loader',src:'command-dock-v30.js?v=31',err:'No se pudo cargar la barra de comandos v30'}
+    {id:'mxStartupStabilityV31Loader',src:'startup-stability-v31.js?v=32',err:'No se pudo cargar el estabilizador de inicio v31'},
+    {id:'mxReport20260824V26Loader',src:'report-2026-08-24-v26.js?v=32',err:'No se pudo cargar el informe histórico 24-08 al 30-08'},
+    {id:'mxReport20260901V28Loader',src:'report-2026-09-01-v28.js?v=32',err:'No se pudo cargar el informe histórico 01-09 al 06-09'},
+    {id:'mxWorkLogV24Loader',src:'work-log-v24.js?v=32',err:'No se pudo cargar mantenimiento y fallas v24'},
+    {id:'mxDashboardExactV29Loader',src:'dashboard-exact-v29.js?v=32',err:'No se pudo cargar el inicio corporativo v29'},
+    {id:'mxDashboardZonesTotalV32Loader',src:'dashboard-zones-total-v32.js?v=32',err:'No se pudo cargar el dashboard histórico por áreas v32'},
+    {id:'mxCommandDockV30Loader',src:'command-dock-v30.js?v=32',err:'No se pudo cargar la barra de comandos v30'}
   ];
   let i=0;
   function next(){
