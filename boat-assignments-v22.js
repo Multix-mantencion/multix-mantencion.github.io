@@ -56,12 +56,23 @@ function install(){
 let n=0;const t=setInterval(()=>{n++;if(install()||n>100)clearInterval(t);},100);
 })();
 
+// Carga secuencial: primero los informes históricos, luego el módulo de trabajos/fallas.
 (function(){
-  if(document.getElementById('mxReport20260824V26Loader'))return;
-  const s=document.createElement('script');s.id='mxReport20260824V26Loader';s.src='report-2026-08-24-v26.js?v=27';s.async=false;s.onerror=()=>console.error('No se pudo cargar el informe histórico 24-08 al 30-08');document.body.appendChild(s);
-})();
-
-(function(){
-  if(document.getElementById('mxWorkLogV24Loader'))return;
-  const s=document.createElement('script');s.id='mxWorkLogV24Loader';s.src='work-log-v24.js?v=27';s.async=false;s.onerror=()=>console.error('No se pudo cargar mantenimiento y fallas v24');document.body.appendChild(s);
+  const scripts=[
+    {id:'mxReport20260824V26Loader',src:'report-2026-08-24-v26.js?v=28',err:'No se pudo cargar el informe histórico 24-08 al 30-08'},
+    {id:'mxReport20260901V28Loader',src:'report-2026-09-01-v28.js?v=28',err:'No se pudo cargar el informe histórico 01-09 al 06-09'},
+    {id:'mxWorkLogV24Loader',src:'work-log-v24.js?v=28',err:'No se pudo cargar mantenimiento y fallas v24'}
+  ];
+  let i=0;
+  function next(){
+    if(i>=scripts.length)return;
+    const x=scripts[i++];
+    const existing=document.getElementById(x.id);
+    if(existing){next();return;}
+    const s=document.createElement('script');s.id=x.id;s.src=x.src;s.async=false;
+    s.onload=next;
+    s.onerror=()=>{console.error(x.err);next();};
+    document.body.appendChild(s);
+  }
+  next();
 })();
