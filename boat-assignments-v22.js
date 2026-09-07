@@ -56,12 +56,13 @@ function install(){
 let n=0;const t=setInterval(()=>{n++;if(install()||n>100)clearInterval(t);},100);
 })();
 
-// Carga secuencial: primero los informes históricos, luego el módulo de trabajos/fallas.
+// Carga secuencial: informes históricos, trabajos/fallas y nuevo inicio corporativo.
 (function(){
   const scripts=[
-    {id:'mxReport20260824V26Loader',src:'report-2026-08-24-v26.js?v=28',err:'No se pudo cargar el informe histórico 24-08 al 30-08'},
-    {id:'mxReport20260901V28Loader',src:'report-2026-09-01-v28.js?v=28',err:'No se pudo cargar el informe histórico 01-09 al 06-09'},
-    {id:'mxWorkLogV24Loader',src:'work-log-v24.js?v=28',err:'No se pudo cargar mantenimiento y fallas v24'}
+    {id:'mxReport20260824V26Loader',src:'report-2026-08-24-v26.js?v=29',err:'No se pudo cargar el informe histórico 24-08 al 30-08'},
+    {id:'mxReport20260901V28Loader',src:'report-2026-09-01-v28.js?v=29',err:'No se pudo cargar el informe histórico 01-09 al 06-09'},
+    {id:'mxWorkLogV24Loader',src:'work-log-v24.js?v=29',err:'No se pudo cargar mantenimiento y fallas v24'},
+    {id:'mxDashboardExactV29Loader',src:'dashboard-exact-v29.js?v=29',err:'No se pudo cargar el inicio corporativo v29'}
   ];
   let i=0;
   function next(){
