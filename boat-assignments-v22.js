@@ -30,7 +30,7 @@ function install(){
   if(!playa){
     const found=findAndRemoveBoat(n=>n.includes('playa bonita')||n.includes('plata bonita'));
     playa=found?.equipment||null;
-    if(playa)pearson.equipment.push(playya);
+    if(playa)pearson.equipment.push(playa);
   }
   if(!playa){
     playa={id:'pearson-playa-bonita',name:'Playa Bonita',type:'Bote / Motor fuera de borda',brand:'Yamaha',model:'FT50CET',reg:'PMO-6601',current:'770',last:'',next:'',interval:'300',status:'OK',notes:'Motor Yamaha 64J · Serie L 1026008'};
