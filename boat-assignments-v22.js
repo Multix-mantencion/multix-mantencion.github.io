@@ -57,6 +57,6 @@ let n=0;const t=setInterval(()=>{n++;if(install()||n>100)clearInterval(t);},100)
 })();
 
 (function(){
-  if(document.getElementById('mxWorkLogV23Loader'))return;
-  const s=document.createElement('script');s.id='mxWorkLogV23Loader';s.src='work-log-v23.js?v=23';s.async=false;s.onerror=()=>console.error('No se pudo cargar el registro de trabajos v23');document.body.appendChild(s);
+  if(document.getElementById('mxWorkLogV24Loader'))return;
+  const s=document.createElement('script');s.id='mxWorkLogV24Loader';s.src='work-log-v24.js?v=24';s.async=false;s.onerror=()=>console.error('No se pudo cargar mantenimiento y fallas v24');document.body.appendChild(s);
 })();
