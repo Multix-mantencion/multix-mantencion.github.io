@@ -1,11 +1,14 @@
-// MultiX v34.2 — Fallas abiertas como estado actual + cambio de estado desde el panel
+// MultiX v35 — fallas abiertas + flujo de solución documentada
 (function(){
 'use strict';
 const $=id=>document.getElementById(id);
 const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
 const norm=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/\s+/g,' ').trim();
+const today=()=>new Date().toISOString().slice(0,10);
+const fmtDate=v=>{if(!v)return 'Sin fecha';const p=String(v).split('-');return p.length===3?`${p[2]}-${p[1]}-${p[0]}`:String(v);};
 const REFUGIO_SET=new Set(['yelen','refugio','yalac','yalak']);
 let modalRows=[];
+let pendingResolution=null;
 function allCenters(){return Object.keys(data?.centers||{});}
 function centersFor(zone){const all=allCenters();if(zone==='Área Refugio')return all.filter(n=>REFUGIO_SET.has(norm(n)));if(zone==='Área Puyuhuapi')return all.filter(n=>!REFUGIO_SET.has(norm(n)));return all;}
 function isOpenStatus(status){const s=norm(status);return s.includes('abiert')||s.includes('en proceso')||s.includes('pendiente');}
@@ -18,47 +21,69 @@ function currentOpenFailures(zone){
   const latest=new Map();
   const history=[...(Array.isArray(data?.history)?data.history:[])].sort((a,b)=>String(a?.meta?.end||a?.meta?.start||'').localeCompare(String(b?.meta?.end||b?.meta?.start||'')));
   const snaps=[...history,data];
-  snaps.forEach(s=>{
-    allowed.forEach(center=>{
-      const c=s?.centers?.[center];if(!c)return;
-      (c.failureLog||[]).forEach(f=>{latest.set(failureKey(center,f),{record:f,center,snapshot:s});});
-    });
-  });
+  snaps.forEach(s=>allowed.forEach(center=>{
+    const c=s?.centers?.[center];if(!c)return;
+    (c.failureLog||[]).forEach(f=>latest.set(failureKey(center,f),{record:f,center,snapshot:s}));
+  }));
   return [...latest.values()].filter(x=>isOpenStatus(x.record?.status)).sort((a,b)=>String(b.record?.date||'').localeCompare(String(a.record?.date||'')));
+}
+function ensureCurrentFailure(center,source){
+  const c=data?.centers?.[center];if(!c)return null;
+  c.failureLog=Array.isArray(c.failureLog)?c.failureLog:[];
+  const key=failureKey(center,source);
+  let f=c.failureLog.find(x=>(source?.id&&x.id===source.id)||failureKey(center,x)===key);
+  if(!f){f={...source,id:source?.id||('failure-'+Date.now()+'-'+Math.random().toString(36).slice(2,6))};c.failureLog.push(f);}
+  return f;
+}
+function ensureWorkLog(c){c.workLog=Array.isArray(c.workLog)?c.workLog:[];return c.workLog;}
+function rebuildWorks(c){
+  const list=ensureWorkLog(c),failures=Array.isArray(c.failureLog)?c.failureLog:[];
+  c.works=list.map(w=>{
+    const f=failures.find(x=>x.id===w.failureId);
+    const parts=[fmtDate(w.date),w.maintenanceType||'Sin clasificar',w.equipmentName||'General',String(w.text||'').trim()];
+    if(String(w.mechanic||'').trim())parts.push('Mecánico: '+String(w.mechanic).trim());
+    if(f)parts.push('Falla asociada: '+String(f.description||f.failureType||'').trim());
+    return parts.filter(Boolean).join(' — ');
+  }).join('\n');
 }
 function persist(){
   try{localStorage.setItem('multixMantencion',JSON.stringify(data));}catch(e){console.warn('No se pudo guardar el cambio de estado de la falla',e);}
   try{if(typeof window.mxPersistDraft==='function')window.mxPersistDraft(true);}catch(_){}
+  try{if(typeof window.mxScheduleAutosave==='function')window.mxScheduleAutosave();}catch(_){}
 }
-function installStyles(){if($('mxFailuresV34Styles'))return;const s=document.createElement('style');s.id='mxFailuresV34Styles';s.textContent=`
+function recordStatus(center,source,value){const f=ensureCurrentFailure(center,source);if(!f)return null;f.status=value;f.statusUpdatedDate=today();persist();return f;}
+function recordResolution(center,source,resolution,resolvedDate,resolvedBy){
+  const c=data?.centers?.[center],f=ensureCurrentFailure(center,source);if(!c||!f)return null;
+  const text=String(resolution||'').trim();if(!text)return null;
+  f.status='Solucionado';f.resolution=text;f.resolvedDate=resolvedDate||today();f.resolvedBy=String(resolvedBy||'').trim();f.statusUpdatedDate=f.resolvedDate;
+  const works=ensureWorkLog(c);
+  let w=works.find(x=>x.failureId===f.id&&x.autoResolution===true);
+  const workText=`Falla solucionada: ${String(f.description||f.failureType||'Falla').trim()}. Solución aplicada: ${text}`;
+  if(!w){w={id:'work-resolution-'+Date.now()+'-'+Math.random().toString(36).slice(2,6),failureId:f.id,autoResolution:true};works.push(w);}
+  Object.assign(w,{date:f.resolvedDate,equipmentName:f.equipmentName||f.equipment||'General',maintenanceType:'Correctivo',text:workText,mechanic:f.resolvedBy||String(data?.meta?.mechanic||'').trim()});
+  rebuildWorks(c);persist();
+  try{if(typeof window.mxRefreshMaintenanceV24==='function')window.mxRefreshMaintenanceV24();}catch(_){}
+  return f;
+}
+function installStyles(){if($('mxFailuresV35Styles'))return;const s=document.createElement('style');s.id='mxFailuresV35Styles';s.textContent=`
 .mxe-kpi.mx-open-failures{cursor:pointer;position:relative}.mxe-kpi.mx-open-failures:after{content:'Ver detalle';position:absolute;right:10px;bottom:8px;font-size:7px;font-weight:900;letter-spacing:.05em;text-transform:uppercase;color:#ff9298;opacity:.9}.mxe-kpi.mx-open-failures:active{transform:scale(.985)}
-.mx-fail-modal{position:fixed;inset:0;z-index:300;background:rgba(1,10,16,.72);display:flex;align-items:flex-end;justify-content:center;padding:16px 12px calc(18px + env(safe-area-inset-bottom));backdrop-filter:blur(5px)}.mx-fail-modal[hidden]{display:none}.mx-fail-sheet{width:min(680px,100%);max-height:min(76vh,760px);overflow:hidden;border:1px solid #3c6174;border-radius:20px;background:#071a25;box-shadow:0 18px 60px rgba(0,0,0,.55);display:flex;flex-direction:column}.mx-fail-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;padding:18px;border-bottom:1px solid #244250}.mx-fail-head h3{margin:0;color:#f4f8fb;font-size:20px}.mx-fail-head p{margin:4px 0 0;color:#8fa8b8;font-size:12px}.mx-fail-close{border:1px solid #365768;background:#102838;color:#dfeaf0;border-radius:10px;padding:9px 12px;font-weight:900}.mx-fail-list{padding:12px;overflow:auto}.mx-fail-item{border:1px solid #294858;background:#0b2230;border-radius:14px;padding:13px;margin-bottom:10px}.mx-fail-row{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.mx-fail-center{font-weight:900;color:#f5f8fa;font-size:15px}.mx-fail-eq{margin-top:5px;color:#63d6f2;font-size:12px;font-weight:800}.mx-fail-desc{margin-top:7px;color:#d6e1e7;font-size:13px;line-height:1.4}.mx-fail-meta{margin-top:8px;color:#829cac;font-size:10px}.mx-fail-empty{padding:28px 18px;text-align:center;color:#8fa8b8}.mx-fail-state-wrap{flex:0 0 auto;display:flex;flex-direction:column;gap:4px;align-items:flex-end}.mx-fail-state-label{font-size:8px;letter-spacing:.06em;text-transform:uppercase;color:#839dac;font-weight:900}.mx-fail-state{appearance:auto;min-height:34px;border-radius:999px;padding:5px 26px 5px 10px;font-size:10px;font-weight:900;text-transform:uppercase;border:1px solid transparent;outline:none}.mx-fail-state.open{background:#55232b;color:#ff9ca3;border-color:#7a313c}.mx-fail-state.process{background:#4b3a14;color:#ffd36d;border-color:#806223}.mx-fail-state.solved{background:#173c2d;color:#9de0be;border-color:#2d6950}.mx-fail-toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(24px + env(safe-area-inset-bottom));z-index:330;border-radius:999px;padding:10px 14px;background:#15382b;color:#b7ebcf;border:1px solid #2c6b50;font-size:12px;font-weight:900;box-shadow:0 10px 30px rgba(0,0,0,.4)}
-@media(max-width:520px){.mx-fail-row{gap:8px}.mx-fail-state{max-width:128px;font-size:9px}.mx-fail-center{font-size:14px}}
-`;
-document.head.appendChild(s);}
+.mx-fail-modal,.mx-resolution-modal{position:fixed;inset:0;z-index:300;background:rgba(1,10,16,.72);display:flex;align-items:flex-end;justify-content:center;padding:16px 12px calc(18px + env(safe-area-inset-bottom));backdrop-filter:blur(5px)}.mx-fail-modal[hidden],.mx-resolution-modal[hidden]{display:none}.mx-fail-sheet,.mx-resolution-sheet{width:min(680px,100%);max-height:min(76vh,760px);overflow:hidden;border:1px solid #3c6174;border-radius:20px;background:#071a25;box-shadow:0 18px 60px rgba(0,0,0,.55);display:flex;flex-direction:column}.mx-fail-head,.mx-resolution-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;padding:18px;border-bottom:1px solid #244250}.mx-fail-head h3,.mx-resolution-head h3{margin:0;color:#f4f8fb;font-size:20px}.mx-fail-head p,.mx-resolution-head p{margin:4px 0 0;color:#8fa8b8;font-size:12px}.mx-fail-close,.mx-resolution-cancel{border:1px solid #365768;background:#102838;color:#dfeaf0;border-radius:10px;padding:9px 12px;font-weight:900}.mx-fail-list{padding:12px;overflow:auto}.mx-fail-item{border:1px solid #294858;background:#0b2230;border-radius:14px;padding:13px;margin-bottom:10px}.mx-fail-row{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.mx-fail-center{font-weight:900;color:#f5f8fa;font-size:15px}.mx-fail-eq{margin-top:5px;color:#63d6f2;font-size:12px;font-weight:800}.mx-fail-desc{margin-top:7px;color:#d6e1e7;font-size:13px;line-height:1.4}.mx-fail-meta{margin-top:8px;color:#829cac;font-size:10px}.mx-fail-empty{padding:28px 18px;text-align:center;color:#8fa8b8}.mx-fail-state-wrap{flex:0 0 auto;display:flex;flex-direction:column;gap:4px;align-items:flex-end}.mx-fail-state-label{font-size:8px;letter-spacing:.06em;text-transform:uppercase;color:#839dac;font-weight:900}.mx-fail-state{appearance:auto;min-height:34px;border-radius:999px;padding:5px 26px 5px 10px;font-size:10px;font-weight:900;text-transform:uppercase;border:1px solid transparent;outline:none}.mx-fail-state.open{background:#55232b;color:#ff9ca3;border-color:#7a313c}.mx-fail-state.process{background:#4b3a14;color:#ffd36d;border-color:#806223}.mx-fail-state.solved{background:#173c2d;color:#9de0be;border-color:#2d6950}.mx-fail-toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(24px + env(safe-area-inset-bottom));z-index:330;border-radius:999px;padding:10px 14px;background:#15382b;color:#b7ebcf;border:1px solid #2c6b50;font-size:12px;font-weight:900;box-shadow:0 10px 30px rgba(0,0,0,.4)}
+.mx-resolution-body{padding:16px;overflow:auto}.mx-resolution-summary{border:1px solid #315264;background:#0b2230;border-radius:13px;padding:12px;margin-bottom:14px}.mx-resolution-summary b{display:block;color:#65d8f2;font-size:13px;margin-bottom:4px}.mx-resolution-summary span{color:#dbe6ec;font-size:13px;line-height:1.4}.mx-resolution-field{margin:11px 0}.mx-resolution-field label{display:block;color:#9db0bd;font-size:10px;font-weight:900;letter-spacing:.05em;text-transform:uppercase;margin-bottom:6px}.mx-resolution-field textarea,.mx-resolution-field input{width:100%;box-sizing:border-box;border:1px solid #315264;border-radius:11px;background:#0c2230;color:#edf5f8;padding:11px;font-size:16px}.mx-resolution-field textarea{min-height:120px;resize:vertical}.mx-resolution-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.mx-resolution-actions{display:flex;gap:10px;margin-top:14px}.mx-resolution-save{flex:1;border:0;border-radius:11px;background:#247d62;color:#f2fff8;padding:12px;font-weight:950}.mx-resolution-help{color:#86a0af;font-size:11px;line-height:1.4;margin-top:8px}
+@media(max-width:520px){.mx-fail-row{gap:8px}.mx-fail-state{max-width:128px;font-size:9px}.mx-fail-center{font-size:14px}.mx-resolution-grid{grid-template-columns:1fr}}
+`;document.head.appendChild(s);}
 function ensureModal(){let m=$('mxOpenFailuresModal');if(m)return m;m=document.createElement('div');m.id='mxOpenFailuresModal';m.className='mx-fail-modal';m.hidden=true;m.innerHTML='<div class="mx-fail-sheet"><div class="mx-fail-head"><div><h3>Fallas abiertas</h3><p id="mxFailSubtitle"></p></div><button type="button" class="mx-fail-close" id="mxFailClose">Cerrar</button></div><div class="mx-fail-list" id="mxFailList"></div></div>';document.body.appendChild(m);$('mxFailClose').onclick=()=>m.hidden=true;m.onclick=e=>{if(e.target===m)m.hidden=true;};return m;}
+function ensureResolutionModal(){let m=$('mxResolutionModal');if(m)return m;m=document.createElement('div');m.id='mxResolutionModal';m.className='mx-resolution-modal';m.hidden=true;m.innerHTML=`<div class="mx-resolution-sheet"><div class="mx-resolution-head"><div><h3>Registrar solución</h3><p>Describe cómo se solucionó la falla. Esta información quedará en el historial y en el informe semanal.</p></div><button type="button" class="mx-resolution-cancel" id="mxResolutionClose">Cancelar</button></div><div class="mx-resolution-body"><div class="mx-resolution-summary" id="mxResolutionSummary"></div><div class="mx-resolution-field"><label>¿Cómo se solucionó?</label><textarea id="mxResolutionText" placeholder="Ej: Se reemplazó el presostato, se ajustaron conexiones y se realizaron pruebas de operación sin novedades."></textarea></div><div class="mx-resolution-grid"><div class="mx-resolution-field"><label>Fecha de solución</label><input id="mxResolutionDate" type="date"></div><div class="mx-resolution-field"><label>Mecánico / responsable</label><input id="mxResolutionBy" type="text" placeholder="Nombre"></div></div><div class="mx-resolution-actions"><button type="button" class="mx-resolution-save" id="mxResolutionSave">Guardar solución</button></div><div class="mx-resolution-help">Al guardar, la falla deja de aparecer como abierta, pero permanece en las estadísticas históricas. También se registra automáticamente como trabajo correctivo del período.</div></div></div>`;document.body.appendChild(m);$('mxResolutionClose').onclick=cancelResolution;$('mxResolutionSave').onclick=saveResolution;m.onclick=e=>{if(e.target===m)cancelResolution();};return m;}
 function currentZone(){return $('mxeZoneArea')?.value||$('summary')?.dataset?.mxeArea||'Todas las zonas';}
 function stateOptions(status){const s=uiStatus(status);return `<option value="Abierta"${s==='Abierta'?' selected':''}>Abierta</option><option value="En proceso"${s==='En proceso'?' selected':''}>En proceso</option><option value="Solucionado"${s==='Solucionado'?' selected':''}>Solucionado</option>`;}
 function showToast(text){let t=$('mxFailToast');if(!t){t=document.createElement('div');t.id='mxFailToast';t.className='mx-fail-toast';document.body.appendChild(t);}t.textContent=text;t.hidden=false;clearTimeout(t._tm);t._tm=setTimeout(()=>t.hidden=true,1800);}
-function renderModal(){
-  const zone=currentZone(),rows=currentOpenFailures(zone),m=ensureModal();modalRows=rows;
-  $('mxFailSubtitle').textContent=`${zone} · ${rows.length} falla${rows.length===1?'':'s'} pendiente${rows.length===1?'':'s'} de cierre`;
-  $('mxFailList').innerHTML=rows.length?rows.map((x,i)=>{const f=x.record;const cls=statusClass(f.status);return `<article class="mx-fail-item"><div class="mx-fail-row"><div class="mx-fail-center">${esc(x.center)}</div><div class="mx-fail-state-wrap"><span class="mx-fail-state-label">Estado</span><select class="mx-fail-state ${cls}" data-fail-index="${i}" aria-label="Cambiar estado de la falla">${stateOptions(f.status)}</select></div></div><div class="mx-fail-eq">${esc(f.equipmentName||f.equipment||'General')}</div><div class="mx-fail-desc">${esc(f.description||f.detail||'Sin descripción')}</div><div class="mx-fail-meta">${esc(f.date||'Sin fecha')}${f.failureType?' · '+esc(f.failureType):''}</div></article>`;}).join(''):'<div class="mx-fail-empty">No hay fallas abiertas en esta zona.</div>';
-  $('mxFailList').querySelectorAll('.mx-fail-state').forEach(sel=>{sel.onchange=()=>changeStatus(Number(sel.dataset.failIndex),sel.value);});
-  m.hidden=false;
-}
-function changeStatus(index,value){
-  const row=modalRows[index];if(!row?.record)return;
-  row.record.status=value;
-  if(value==='Solucionado'){row.record.resolvedDate=new Date().toISOString().slice(0,10);}else if(row.record.resolvedDate){delete row.record.resolvedDate;}
-  persist();
-  if(value==='Solucionado')showToast('Falla marcada como solucionada');
-  else showToast(`Estado actualizado: ${value}`);
-  patchCard();
-  setTimeout(renderModal,30);
-}
+function renderModal(){const zone=currentZone(),rows=currentOpenFailures(zone),m=ensureModal();modalRows=rows;$('mxFailSubtitle').textContent=`${zone} · ${rows.length} falla${rows.length===1?'':'s'} pendiente${rows.length===1?'':'s'} de cierre`;$('mxFailList').innerHTML=rows.length?rows.map((x,i)=>{const f=x.record,cls=statusClass(f.status);return `<article class="mx-fail-item"><div class="mx-fail-row"><div class="mx-fail-center">${esc(x.center)}</div><div class="mx-fail-state-wrap"><span class="mx-fail-state-label">Estado</span><select class="mx-fail-state ${cls}" data-fail-index="${i}" aria-label="Cambiar estado de la falla">${stateOptions(f.status)}</select></div></div><div class="mx-fail-eq">${esc(f.equipmentName||f.equipment||'General')}</div><div class="mx-fail-desc">${esc(f.description||f.detail||'Sin descripción')}</div><div class="mx-fail-meta">${esc(f.date||'Sin fecha')}${f.failureType?' · '+esc(f.failureType):''}</div></article>`;}).join(''):'<div class="mx-fail-empty">No hay fallas abiertas en esta zona.</div>';$('mxFailList').querySelectorAll('.mx-fail-state').forEach(sel=>{sel.onchange=()=>changeStatus(Number(sel.dataset.failIndex),sel.value);});m.hidden=false;}
+function requestResolution(center,record,opts={}){pendingResolution={center,record,opts};const m=ensureResolutionModal();$('mxResolutionSummary').innerHTML=`<b>${esc(center)} · ${esc(record?.equipmentName||record?.equipment||'General')}</b><span>${esc(record?.description||record?.detail||'Sin descripción')}</span>`;$('mxResolutionText').value=String(record?.resolution||'');$('mxResolutionDate').value=record?.resolvedDate||today();$('mxResolutionBy').value=String(record?.resolvedBy||data?.meta?.mechanic||'');m.hidden=false;setTimeout(()=>$('mxResolutionText')?.focus(),80);}
+window.mxRequestFailureResolution=requestResolution;
+function cancelResolution(){const p=pendingResolution;pendingResolution=null;const m=$('mxResolutionModal');if(m)m.hidden=true;try{p?.opts?.onCancel?.();}catch(_){} }
+function saveResolution(){const p=pendingResolution;if(!p)return;const text=String($('mxResolutionText')?.value||'').trim();if(!text){alert('Escribe cómo se solucionó la falla antes de guardar.');return;}const date=$('mxResolutionDate')?.value||today(),by=String($('mxResolutionBy')?.value||'').trim();const f=recordResolution(p.center,p.record,text,date,by);if(!f){alert('No se pudo guardar la solución.');return;}pendingResolution=null;$('mxResolutionModal').hidden=true;showToast('Solución registrada y añadida al informe semanal');try{p.opts?.onSaved?.(f);}catch(_){}patchCard();setTimeout(renderModal,30);}
+function changeStatus(index,value){const row=modalRows[index];if(!row?.record)return;if(value==='Solucionado'){requestResolution(row.center,row.record,{onCancel:()=>setTimeout(renderModal,20),onSaved:()=>{}});return;}recordStatus(row.center,row.record,value);showToast(`Estado actualizado: ${value}`);patchCard();setTimeout(renderModal,30);}
 function openModal(){renderModal();}
-function patchCard(){if(typeof data==='undefined')return;const summary=$('summary');if(!summary)return;const cards=[...summary.querySelectorAll('.mxe-kpi')];const card=cards.find(c=>norm(c.textContent).includes('fallas abiertas'));if(!card)return;const rows=currentOpenFailures(currentZone());card.classList.add('mx-open-failures');const num=card.querySelector('strong');if(num)num.textContent=String(rows.length);const em=card.querySelector('em');if(em)em.textContent='Estado actual';if(!card.dataset.mxFailV34){card.dataset.mxFailV34='1';card.tabIndex=0;card.setAttribute('role','button');card.setAttribute('aria-label','Ver fallas abiertas');card.onclick=openModal;card.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openModal();}};}}
-function start(){installStyles();ensureModal();patchCard();const summary=$('summary');if(summary&&!window.__mxFailObsV34){window.__mxFailObsV34=new MutationObserver(()=>setTimeout(patchCard,20));window.__mxFailObsV34.observe(summary,{childList:true,subtree:true});}let n=0;const t=setInterval(()=>{n++;patchCard();if(n>120)clearInterval(t);},250);}
+function patchCard(){if(typeof data==='undefined')return;const summary=$('summary');if(!summary)return;const cards=[...summary.querySelectorAll('.mxe-kpi')];const card=cards.find(c=>norm(c.textContent).includes('fallas abiertas'));if(!card)return;const rows=currentOpenFailures(currentZone());card.classList.add('mx-open-failures');const num=card.querySelector('strong');if(num)num.textContent=String(rows.length);const em=card.querySelector('em');if(em)em.textContent='Estado actual';if(!card.dataset.mxFailV35){card.dataset.mxFailV35='1';card.tabIndex=0;card.setAttribute('role','button');card.setAttribute('aria-label','Ver fallas abiertas');card.onclick=openModal;card.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openModal();}};}}
+function start(){installStyles();ensureModal();ensureResolutionModal();patchCard();const summary=$('summary');if(summary&&!window.__mxFailObsV35){window.__mxFailObsV35=new MutationObserver(()=>setTimeout(patchCard,20));window.__mxFailObsV35.observe(summary,{childList:true,subtree:true});}let n=0;const t=setInterval(()=>{n++;patchCard();if(n>120)clearInterval(t);},250);}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
