@@ -1,4 +1,4 @@
-// MultiX v35 — fallas abiertas + flujo de solución documentada
+// MultiX v35.1 — fallas abiertas + flujo de solución documentada
 (function(){
 'use strict';
 const $=id=>document.getElementById(id);
@@ -27,43 +27,18 @@ function currentOpenFailures(zone){
   }));
   return [...latest.values()].filter(x=>isOpenStatus(x.record?.status)).sort((a,b)=>String(b.record?.date||'').localeCompare(String(a.record?.date||'')));
 }
-function ensureCurrentFailure(center,source){
-  const c=data?.centers?.[center];if(!c)return null;
-  c.failureLog=Array.isArray(c.failureLog)?c.failureLog:[];
-  const key=failureKey(center,source);
-  let f=c.failureLog.find(x=>(source?.id&&x.id===source.id)||failureKey(center,x)===key);
-  if(!f){f={...source,id:source?.id||('failure-'+Date.now()+'-'+Math.random().toString(36).slice(2,6))};c.failureLog.push(f);}
-  return f;
-}
+function ensureCurrentFailure(center,source){const c=data?.centers?.[center];if(!c)return null;c.failureLog=Array.isArray(c.failureLog)?c.failureLog:[];const key=failureKey(center,source);let f=c.failureLog.find(x=>(source?.id&&x.id===source.id)||failureKey(center,x)===key);if(!f){f={...source,id:source?.id||('failure-'+Date.now()+'-'+Math.random().toString(36).slice(2,6))};c.failureLog.push(f);}return f;}
 function ensureWorkLog(c){c.workLog=Array.isArray(c.workLog)?c.workLog:[];return c.workLog;}
-function rebuildWorks(c){
-  const list=ensureWorkLog(c),failures=Array.isArray(c.failureLog)?c.failureLog:[];
-  c.works=list.map(w=>{
-    const f=failures.find(x=>x.id===w.failureId);
-    const parts=[fmtDate(w.date),w.maintenanceType||'Sin clasificar',w.equipmentName||'General',String(w.text||'').trim()];
-    if(String(w.mechanic||'').trim())parts.push('Mecánico: '+String(w.mechanic).trim());
-    if(f)parts.push('Falla asociada: '+String(f.description||f.failureType||'').trim());
-    return parts.filter(Boolean).join(' — ');
-  }).join('\n');
-}
-function persist(){
-  try{localStorage.setItem('multixMantencion',JSON.stringify(data));}catch(e){console.warn('No se pudo guardar el cambio de estado de la falla',e);}
-  try{if(typeof window.mxPersistDraft==='function')window.mxPersistDraft(true);}catch(_){}
-  try{if(typeof window.mxScheduleAutosave==='function')window.mxScheduleAutosave();}catch(_){}
-}
+function rebuildWorks(c){const list=ensureWorkLog(c),failures=Array.isArray(c.failureLog)?c.failureLog:[];c.works=list.map(w=>{const f=failures.find(x=>x.id===w.failureId);const parts=[fmtDate(w.date),w.maintenanceType||'Sin clasificar',w.equipmentName||'General',String(w.text||'').trim()];if(String(w.mechanic||'').trim())parts.push('Mecánico: '+String(w.mechanic).trim());if(f)parts.push('Falla asociada: '+String(f.description||f.failureType||'').trim());return parts.filter(Boolean).join(' — ');}).join('\n');}
+function persist(){try{localStorage.setItem('multixMantencion',JSON.stringify(data));}catch(e){console.warn('No se pudo guardar el cambio de estado de la falla',e);}try{if(typeof window.mxPersistDraft==='function')window.mxPersistDraft(true);}catch(_){}try{if(typeof window.mxScheduleAutosave==='function')window.mxScheduleAutosave();}catch(_){} }
 function recordStatus(center,source,value){const f=ensureCurrentFailure(center,source);if(!f)return null;f.status=value;f.statusUpdatedDate=today();persist();return f;}
 function recordResolution(center,source,resolution,resolvedDate,resolvedBy){
-  const c=data?.centers?.[center],f=ensureCurrentFailure(center,source);if(!c||!f)return null;
-  const text=String(resolution||'').trim();if(!text)return null;
+  const c=data?.centers?.[center],f=ensureCurrentFailure(center,source);if(!c||!f)return null;const text=String(resolution||'').trim();if(!text)return null;
   f.status='Solucionado';f.resolution=text;f.resolvedDate=resolvedDate||today();f.resolvedBy=String(resolvedBy||'').trim();f.statusUpdatedDate=f.resolvedDate;
-  const works=ensureWorkLog(c);
-  let w=works.find(x=>x.failureId===f.id&&x.autoResolution===true);
-  const workText=`Falla solucionada: ${String(f.description||f.failureType||'Falla').trim()}. Solución aplicada: ${text}`;
+  const works=ensureWorkLog(c);let w=works.find(x=>x.failureId===f.id&&x.autoResolution===true);const workText=`Falla solucionada: ${String(f.description||f.failureType||'Falla').trim()}. Solución aplicada: ${text}`;
   if(!w){w={id:'work-resolution-'+Date.now()+'-'+Math.random().toString(36).slice(2,6),failureId:f.id,autoResolution:true};works.push(w);}
   Object.assign(w,{date:f.resolvedDate,equipmentName:f.equipmentName||f.equipment||'General',maintenanceType:'Correctivo',text:workText,mechanic:f.resolvedBy||String(data?.meta?.mechanic||'').trim()});
-  rebuildWorks(c);persist();
-  try{if(typeof window.mxRefreshMaintenanceV24==='function')window.mxRefreshMaintenanceV24();}catch(_){}
-  return f;
+  rebuildWorks(c);persist();try{if(typeof window.mxRefreshMaintenanceV24==='function')window.mxRefreshMaintenanceV24();}catch(_){}return f;
 }
 function installStyles(){if($('mxFailuresV35Styles'))return;const s=document.createElement('style');s.id='mxFailuresV35Styles';s.textContent=`
 .mxe-kpi.mx-open-failures{cursor:pointer;position:relative}.mxe-kpi.mx-open-failures:after{content:'Ver detalle';position:absolute;right:10px;bottom:8px;font-size:7px;font-weight:900;letter-spacing:.05em;text-transform:uppercase;color:#ff9298;opacity:.9}.mxe-kpi.mx-open-failures:active{transform:scale(.985)}
@@ -80,8 +55,8 @@ function renderModal(){const zone=currentZone(),rows=currentOpenFailures(zone),m
 function requestResolution(center,record,opts={}){pendingResolution={center,record,opts};const m=ensureResolutionModal();$('mxResolutionSummary').innerHTML=`<b>${esc(center)} · ${esc(record?.equipmentName||record?.equipment||'General')}</b><span>${esc(record?.description||record?.detail||'Sin descripción')}</span>`;$('mxResolutionText').value=String(record?.resolution||'');$('mxResolutionDate').value=record?.resolvedDate||today();$('mxResolutionBy').value=String(record?.resolvedBy||data?.meta?.mechanic||'');m.hidden=false;setTimeout(()=>$('mxResolutionText')?.focus(),80);}
 window.mxRequestFailureResolution=requestResolution;
 function cancelResolution(){const p=pendingResolution;pendingResolution=null;const m=$('mxResolutionModal');if(m)m.hidden=true;try{p?.opts?.onCancel?.();}catch(_){} }
-function saveResolution(){const p=pendingResolution;if(!p)return;const text=String($('mxResolutionText')?.value||'').trim();if(!text){alert('Escribe cómo se solucionó la falla antes de guardar.');return;}const date=$('mxResolutionDate')?.value||today(),by=String($('mxResolutionBy')?.value||'').trim();const f=recordResolution(p.center,p.record,text,date,by);if(!f){alert('No se pudo guardar la solución.');return;}pendingResolution=null;$('mxResolutionModal').hidden=true;showToast('Solución registrada y añadida al informe semanal');try{p.opts?.onSaved?.(f);}catch(_){}patchCard();setTimeout(renderModal,30);}
-function changeStatus(index,value){const row=modalRows[index];if(!row?.record)return;if(value==='Solucionado'){requestResolution(row.center,row.record,{onCancel:()=>setTimeout(renderModal,20),onSaved:()=>{}});return;}recordStatus(row.center,row.record,value);showToast(`Estado actualizado: ${value}`);patchCard();setTimeout(renderModal,30);}
+function saveResolution(){const p=pendingResolution;if(!p)return;const text=String($('mxResolutionText')?.value||'').trim();if(!text){alert('Escribe cómo se solucionó la falla antes de guardar.');return;}const date=$('mxResolutionDate')?.value||today(),by=String($('mxResolutionBy')?.value||'').trim();const f=recordResolution(p.center,p.record,text,date,by);if(!f){alert('No se pudo guardar la solución.');return;}pendingResolution=null;$('mxResolutionModal').hidden=true;showToast('Solución registrada y añadida al informe semanal');try{p.opts?.onSaved?.(f);}catch(_){}patchCard();if(p.opts?.reopenFailures)setTimeout(renderModal,30);}
+function changeStatus(index,value){const row=modalRows[index];if(!row?.record)return;if(value==='Solucionado'){requestResolution(row.center,row.record,{reopenFailures:true,onCancel:()=>setTimeout(renderModal,20)});return;}recordStatus(row.center,row.record,value);showToast(`Estado actualizado: ${value}`);patchCard();setTimeout(renderModal,30);}
 function openModal(){renderModal();}
 function patchCard(){if(typeof data==='undefined')return;const summary=$('summary');if(!summary)return;const cards=[...summary.querySelectorAll('.mxe-kpi')];const card=cards.find(c=>norm(c.textContent).includes('fallas abiertas'));if(!card)return;const rows=currentOpenFailures(currentZone());card.classList.add('mx-open-failures');const num=card.querySelector('strong');if(num)num.textContent=String(rows.length);const em=card.querySelector('em');if(em)em.textContent='Estado actual';if(!card.dataset.mxFailV35){card.dataset.mxFailV35='1';card.tabIndex=0;card.setAttribute('role','button');card.setAttribute('aria-label','Ver fallas abiertas');card.onclick=openModal;card.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openModal();}};}}
 function start(){installStyles();ensureModal();ensureResolutionModal();patchCard();const summary=$('summary');if(summary&&!window.__mxFailObsV35){window.__mxFailObsV35=new MutationObserver(()=>setTimeout(patchCard,20));window.__mxFailObsV35.observe(summary,{childList:true,subtree:true});}let n=0;const t=setInterval(()=>{n++;patchCard();if(n>120)clearInterval(t);},250);}
