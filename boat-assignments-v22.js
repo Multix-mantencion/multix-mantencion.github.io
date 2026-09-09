@@ -31,19 +31,20 @@ let n=0;const t=setInterval(()=>{n++;if(install()||n>100)clearInterval(t);},100)
 
 (function(){
   const scripts=[
-    {id:'mxStartupStabilityV31Loader',src:'startup-stability-v31.js?v=42',err:'No se pudo cargar el estabilizador seguro'},
-    {id:'mxDashboardExactV29Loader',src:'dashboard-exact-v29.js?v=42',err:'No se pudo cargar el estilo del inicio corporativo'},
-    {id:'mxDashboardZonesTotalV32Loader',src:'dashboard-zones-total-v32.js?v=42',err:'No se pudo cargar el dashboard histórico por áreas'},
-    {id:'mxStabilityWatchdogV40Loader',src:'stability-watchdog-v40.js?v=42',err:'No se pudo cargar la protección de estabilidad'},
-    {id:'mxCommandDockV30Loader',src:'command-dock-v30.js?v=42',err:'No se pudo cargar la barra de comandos'},
-    {id:'mxEquipmentPersistenceV33Loader',src:'equipment-persistence-v33.js?v=42',err:'No se pudo cargar la ficha maestra de equipos'},
-    {id:'mxReport20260824V26Loader',src:'report-2026-08-24-v26.js?v=42',err:'No se pudo cargar el informe histórico 24-08 al 30-08'},
-    {id:'mxReport20260901V28Loader',src:'report-2026-09-01-v28.js?v=42',err:'No se pudo cargar el informe histórico 01-09 al 06-09'},
-    {id:'mxWorkLogV24Loader',src:'work-log-v24.js?v=42',err:'No se pudo cargar mantenimiento y fallas'},
-    {id:'mxDashboardFailuresV34Loader',src:'dashboard-failures-v34.js?v=42',err:'No se pudo cargar el detalle de fallas abiertas'},
-    {id:'mxRequirementsProgrammingV36Loader',src:'requirements-programming-v36.js?v=42',err:'No se pudo cargar requerimientos y programaciones'},
-    {id:'mxDashboardWorksHistoryV42Loader',src:'dashboard-works-history-v42.js?v=42',err:'No se pudo cargar el histórico de trabajos realizados'},
-    {id:'mxTabIsolationV41Loader',src:'tab-isolation-v41.js?v=42',err:'No se pudo cargar la separación de pestañas'}
+    {id:'mxStartupStabilityV31Loader',src:'startup-stability-v31.js?v=43',err:'No se pudo cargar el estabilizador seguro'},
+    {id:'mxDashboardExactV29Loader',src:'dashboard-exact-v29.js?v=43',err:'No se pudo cargar el estilo del inicio corporativo'},
+    {id:'mxDashboardZonesTotalV32Loader',src:'dashboard-zones-total-v32.js?v=43',err:'No se pudo cargar el dashboard histórico por áreas'},
+    {id:'mxGlobalChartsV43Loader',src:'global-charts-v43.js?v=43',err:'No se pudo cargar la protección de gráficos globales'},
+    {id:'mxStabilityWatchdogV40Loader',src:'stability-watchdog-v40.js?v=43',err:'No se pudo cargar la protección de estabilidad'},
+    {id:'mxCommandDockV30Loader',src:'command-dock-v30.js?v=43',err:'No se pudo cargar la barra de comandos'},
+    {id:'mxEquipmentPersistenceV33Loader',src:'equipment-persistence-v33.js?v=43',err:'No se pudo cargar la ficha maestra de equipos'},
+    {id:'mxReport20260824V26Loader',src:'report-2026-08-24-v26.js?v=43',err:'No se pudo cargar el informe histórico 24-08 al 30-08'},
+    {id:'mxReport20260901V28Loader',src:'report-2026-09-01-v28.js?v=43',err:'No se pudo cargar el informe histórico 01-09 al 06-09'},
+    {id:'mxWorkLogV24Loader',src:'work-log-v24.js?v=43',err:'No se pudo cargar mantenimiento y fallas'},
+    {id:'mxDashboardFailuresV34Loader',src:'dashboard-failures-v34.js?v=43',err:'No se pudo cargar el detalle de fallas abiertas'},
+    {id:'mxRequirementsProgrammingV36Loader',src:'requirements-programming-v36.js?v=43',err:'No se pudo cargar requerimientos y programaciones'},
+    {id:'mxDashboardWorksHistoryV42Loader',src:'dashboard-works-history-v42.js?v=43',err:'No se pudo cargar el histórico de trabajos realizados'},
+    {id:'mxTabIsolationV41Loader',src:'tab-isolation-v41.js?v=43',err:'No se pudo cargar la separación de pestañas'}
   ];
   let i=0;
   function next(){if(i>=scripts.length)return;const x=scripts[i++];const existing=document.getElementById(x.id);if(existing){next();return;}const s=document.createElement('script');s.id=x.id;s.src=x.src;s.async=false;s.onload=next;s.onerror=()=>{console.error(x.err);next();};document.body.appendChild(s);}
