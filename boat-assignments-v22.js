@@ -45,6 +45,7 @@ let n=0;const t=setInterval(()=>{n++;if(install()||n>100)clearInterval(t);},100)
     {id:'mxDashboardWorksHistoryLiteV42Loader',src:'dashboard-works-history-lite-v42.js?v=1',err:'No se pudo cargar el histórico simple de trabajos realizados'},
     {id:'mxDashboardOverdueEquipmentLiteV44Loader',src:'dashboard-overdue-equipment-lite-v44.js?v=1',err:'No se pudo cargar el detalle de equipos vencidos por horómetro'},
     {id:'mxEnsureDeltaCenterV45Loader',src:'ensure-delta-center-v45.js?v=1',err:'No se pudo restaurar Centro Delta'},
+    {id:'mxEquipmentHoursPerformanceV47Loader',src:'equipment-hours-performance-v47.js?v=1',err:'No se pudo cargar la optimización de horómetros'},
     {id:'mxTabIsolationV41Loader',src:'tab-isolation-v41.js?v=41',err:'No se pudo cargar la separación de pestañas'}
   ];
   let i=0;
