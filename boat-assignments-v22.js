@@ -42,6 +42,7 @@ let n=0;const t=setInterval(()=>{n++;if(install()||n>100)clearInterval(t);},100)
     {id:'mxWorkLogV24Loader',src:'work-log-v24.js?v=41',err:'No se pudo cargar mantenimiento y fallas'},
     {id:'mxDashboardFailuresV34Loader',src:'dashboard-failures-v34.js?v=41',err:'No se pudo cargar el detalle de fallas abiertas'},
     {id:'mxRequirementsProgrammingV36Loader',src:'requirements-programming-v36.js?v=41',err:'No se pudo cargar requerimientos y programaciones'},
+    {id:'mxDashboardWorksHistoryLiteV42Loader',src:'dashboard-works-history-lite-v42.js?v=1',err:'No se pudo cargar el histórico simple de trabajos realizados'},
     {id:'mxTabIsolationV41Loader',src:'tab-isolation-v41.js?v=41',err:'No se pudo cargar la separación de pestañas'}
   ];
   let i=0;
