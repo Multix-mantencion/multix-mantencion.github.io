@@ -1,4 +1,4 @@
-// MultiX v49 — navegación estable y separación simple entre secciones
+// MultiX v49.1 — navegación estable y separación simple entre secciones
 (function(){
 'use strict';
 const $=id=>document.getElementById(id);
@@ -101,8 +101,7 @@ function bindNavigation(){
   },true);
 }
 
-function safety(){
-  document.querySelectorAll('[hidden]').forEach(el=>{if(el.matches('.mx-req-modal,.mx-req-complete-modal,.mx-fail-modal,.mx-resolution-modal,.mx-workhist-modal'))el.style.setProperty('display','none','important');});
+function syncInitial(){
   const active=SECTIONS.find(id=>$(id)?.classList.contains('active'))||'summary';
   applySection(active,active);
 }
@@ -110,9 +109,9 @@ function safety(){
 function start(){
   bindNavigation();
   patchSwitchTab();
-  safety();
-  setTimeout(()=>{patchSwitchTab();safety();},120);
-  setTimeout(()=>{patchSwitchTab();safety();},600);
+  syncInitial();
+  setTimeout(()=>{patchSwitchTab();syncInitial();},120);
+  setTimeout(()=>{patchSwitchTab();syncInitial();},600);
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
