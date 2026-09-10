@@ -40,6 +40,7 @@ let n=0;const t=setInterval(()=>{n++;if(install()||n>100)clearInterval(t);},100)
     {id:'mxReport20260824V26Loader',src:'report-2026-08-24-v26.js?v=41',err:'No se pudo cargar el informe histórico 24-08 al 30-08'},
     {id:'mxReport20260901V28Loader',src:'report-2026-09-01-v28.js?v=41',err:'No se pudo cargar el informe histórico 01-09 al 06-09'},
     {id:'mxWorkLogV24Loader',src:'work-log-v24.js?v=41',err:'No se pudo cargar mantenimiento y fallas'},
+    {id:'mxFailureHistoryRefreshV52Loader',src:'failure-history-refresh-v52.js?v=1',err:'No se pudo refrescar el acumulado histórico de fallas'},
     {id:'mxDashboardFailuresV34Loader',src:'dashboard-failures-v34.js?v=41',err:'No se pudo cargar el detalle de fallas abiertas'},
     {id:'mxFailureDeleteV50Loader',src:'failure-delete-v50.js?v=2',err:'No se pudo cargar la eliminación de fallas abiertas'},
     {id:'mxRequirementsProgrammingV36Loader',src:'requirements-programming-v36.js?v=41',err:'No se pudo cargar requerimientos y programaciones'},
