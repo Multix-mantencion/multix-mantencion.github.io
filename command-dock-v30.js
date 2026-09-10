@@ -1,4 +1,4 @@
-// MultiX v30 — barra de comandos visible y funcional sobre la navegación inferior
+// MultiX v30.1 — guardar avance sin indicador flotante persistente
 (function(){
 'use strict';
 const $=id=>document.getElementById(id);
@@ -34,15 +34,6 @@ function installStyles(){
     body:not(.mxe-home)>.bottom #pdfBtn{background:#32c6ad;border-color:#32c6ad;color:#06211c}
     body:not(.mxe-home) .app{padding-bottom:calc(178px + env(safe-area-inset-bottom))!important}
     .editor.open .editor-inner{padding-bottom:calc(190px + env(safe-area-inset-bottom))!important}
-    .mx-command-toast{
-      position:fixed;left:50%;transform:translateX(-50%);
-      bottom:calc(142px + env(safe-area-inset-bottom));z-index:120;
-      background:#103246;color:#eaf8ff;border:1px solid #2b718e;
-      border-radius:999px;padding:9px 14px;font-size:12px;font-weight:800;
-      box-shadow:0 8px 26px rgba(0,0,0,.35);pointer-events:none;
-      opacity:0;transition:opacity .18s ease;
-    }
-    .mx-command-toast.show{opacity:1}
     @media(max-width:420px){
       body:not(.mxe-home)>.bottom .btn{font-size:11px!important;padding-left:5px!important;padding-right:5px!important}
     }
@@ -50,10 +41,9 @@ function installStyles(){
   document.head.appendChild(s);
 }
 
-function toast(text){
-  let t=$('mxCommandToastV30');
-  if(!t){t=document.createElement('div');t.id='mxCommandToastV30';t.className='mx-command-toast';document.body.appendChild(t);}
-  t.textContent=text;t.classList.add('show');clearTimeout(t._tm);t._tm=setTimeout(()=>t.classList.remove('show'),1700);
+function removeLegacySaveIndicator(){
+  const t=$('mxCommandToastV30');
+  if(t)try{t.remove();}catch(_){t.classList.remove('show');t.style.display='none';}
 }
 
 function saveEditorDraft(){
@@ -81,7 +71,7 @@ function saveEditorDraft(){
   try{localStorage.setItem('multixMantencion',JSON.stringify(data));}catch(_){}
   try{if(typeof window.mxPersistDraft==='function')window.mxPersistDraft(true);}catch(_){}
   const st=$('saveState');if(st)st.textContent='Avance guardado '+new Date().toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit'});
-  toast('Avance del centro guardado');
+  removeLegacySaveIndicator();
   return true;
 }
 
@@ -107,7 +97,7 @@ function bindCommands(){
   }
 }
 
-function refresh(){installStyles();bindCommands();}
+function refresh(){installStyles();removeLegacySaveIndicator();bindCommands();}
 function start(){
   refresh();
   let n=0;const t=setInterval(()=>{n++;refresh();if(n>80)clearInterval(t);},150);
