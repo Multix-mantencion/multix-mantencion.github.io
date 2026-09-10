@@ -35,7 +35,7 @@ let n=0;const t=setInterval(()=>{n++;if(install()||n>100)clearInterval(t);},100)
     {id:'mxDashboardExactV29Loader',src:'dashboard-exact-v29.js?v=41',err:'No se pudo cargar el estilo del inicio corporativo'},
     {id:'mxDashboardZonesTotalV32Loader',src:'dashboard-zones-total-v32.js?v=41',err:'No se pudo cargar el dashboard histórico por áreas'},
     {id:'mxStabilityWatchdogV40Loader',src:'stability-watchdog-v40.js?v=41',err:'No se pudo cargar la protección de estabilidad'},
-    {id:'mxCommandDockV30Loader',src:'command-dock-v30.js?v=41',err:'No se pudo cargar la barra de comandos'},
+    {id:'mxCommandDockV30Loader',src:'command-dock-v30.js?v=42',err:'No se pudo cargar la barra de comandos'},
     {id:'mxEquipmentPersistenceV33Loader',src:'equipment-persistence-v33.js?v=41',err:'No se pudo cargar la ficha maestra de equipos'},
     {id:'mxReport20260824V26Loader',src:'report-2026-08-24-v26.js?v=41',err:'No se pudo cargar el informe histórico 24-08 al 30-08'},
     {id:'mxReport20260901V28Loader',src:'report-2026-09-01-v28.js?v=41',err:'No se pudo cargar el informe histórico 01-09 al 06-09'},
