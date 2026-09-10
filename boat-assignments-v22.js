@@ -49,6 +49,7 @@ let n=0;const t=setInterval(()=>{n++;if(install()||n>100)clearInterval(t);},100)
     {id:'mxEnsureArbolitoCenterV48Loader',src:'ensure-arbolito-center-v48.js?v=1',err:'No se pudo restaurar Centro Arbolito'},
     {id:'mxEquipmentSafetyRecoveryV49Loader',src:'equipment-safety-recovery-v49.js?v=1',err:'No se pudo cargar la recuperación segura de equipos'},
     {id:'mxEquipmentHoursPerformanceV47Loader',src:'equipment-hours-performance-v47.js?v=2',err:'No se pudo cargar la optimización de horómetros'},
+    {id:'mxRequestsListV51Loader',src:'requests-list-v51.js?v=1',err:'No se pudo cargar el listado de solicitudes'},
     {id:'mxTabIsolationV41Loader',src:'tab-isolation-v41.js?v=41',err:'No se pudo cargar la separación de pestañas'}
   ];
   let i=0;
