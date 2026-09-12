@@ -44,6 +44,7 @@ let n=0;const t=setInterval(()=>{n++;if(install()||n>100)clearInterval(t);},100)
     {id:'mxDashboardFailuresV34Loader',src:'dashboard-failures-v34.js?v=41',err:'No se pudo cargar el detalle de fallas abiertas'},
     {id:'mxFailureDeleteV50Loader',src:'failure-delete-v50.js?v=2',err:'No se pudo cargar la eliminación de fallas abiertas'},
     {id:'mxRequirementsProgrammingV36Loader',src:'requirements-programming-v36.js?v=41',err:'No se pudo cargar requerimientos y programaciones'},
+    {id:'mxDashboardWorkCentersDonutV54Loader',src:'dashboard-work-centers-donut-v54.js?v=1',err:'No se pudo cargar el histórico de trabajos por centro'},
     {id:'mxDashboardWorksHistoryLiteV42Loader',src:'dashboard-works-history-lite-v42.js?v=1',err:'No se pudo cargar el histórico simple de trabajos realizados'},
     {id:'mxDashboardOverdueEquipmentLiteV44Loader',src:'dashboard-overdue-equipment-lite-v44.js?v=1',err:'No se pudo cargar el detalle de equipos vencidos por horómetro'},
     {id:'mxEnsureDeltaCenterV45Loader',src:'ensure-delta-center-v45.js?v=1',err:'No se pudo restaurar Centro Delta'},
