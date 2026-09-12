@@ -47,6 +47,7 @@ let n=0;const t=setInterval(()=>{n++;if(install()||n>100)clearInterval(t);},100)
     {id:'mxDashboardWorkCentersDonutV54Loader',src:'dashboard-work-centers-donut-v54.js?v=1',err:'No se pudo cargar el histórico de trabajos por centro'},
     {id:'mxDashboardWorksHistoryLiteV42Loader',src:'dashboard-works-history-lite-v42.js?v=1',err:'No se pudo cargar el histórico simple de trabajos realizados'},
     {id:'mxDashboardOverdueEquipmentLiteV44Loader',src:'dashboard-overdue-equipment-lite-v44.js?v=1',err:'No se pudo cargar el detalle de equipos vencidos por horómetro'},
+    {id:'mxDashboardPendingCriticalLiteV55Loader',src:'dashboard-pending-critical-lite-v55.js?v=1',err:'No se pudo cargar el detalle de pendientes críticos'},
     {id:'mxEnsureDeltaCenterV45Loader',src:'ensure-delta-center-v45.js?v=1',err:'No se pudo restaurar Centro Delta'},
     {id:'mxEnsureArbolitoCenterV48Loader',src:'ensure-arbolito-center-v48.js?v=1',err:'No se pudo restaurar Centro Arbolito'},
     {id:'mxEquipmentSafetyRecoveryV49Loader',src:'equipment-safety-recovery-v49.js?v=1',err:'No se pudo cargar la recuperación segura de equipos'},
